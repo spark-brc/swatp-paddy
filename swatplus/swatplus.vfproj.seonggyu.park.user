@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioUserFile ProjectCreator="Intel Fortran" Keyword="Console Application" Version="11.0" ProjectIdGuid="{818CCCBB-FE16-4AFC-859D-C628A0A41D17}">
+	<Configurations>
+		<Configuration Name="Debug|Win32" WorkingDirectory="D:\Projects\Watersheds\Ghana\Analysis\dawhenya\prj02\Scenarios\Default\TxtInOut"/>
+		<Configuration Name="Release|Win32" WorkingDirectory="D:\Projects\Watersheds\Ghana\Analysis\dawhenya\prj02\Scenarios\Default\TxtInOut"/>
+		<Configuration Name="Debug|x64" WorkingDirectory="D:\Projects\Watersheds\Ghana\Analysis\dawhenya\prj03_paddy\Scenarios\Default\TxtInOut"/>
+		<Configuration Name="Release|x64" WorkingDirectory="D:\Projects\Watersheds\Ghana\Analysis\dawhenya\prj02\Scenarios\Default\TxtInOut"/></Configurations></VisualStudioUserFile>

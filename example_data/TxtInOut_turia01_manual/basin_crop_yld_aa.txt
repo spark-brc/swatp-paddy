@@ -1,0 +1,3 @@
+ Comunidad_de_riego_Turia_ SWAT+ Aug 27 2024        MODULAR Rev 2024.61.0.1                               
+       year     plant_no   plant_name       harv_area(ha)    yld(t)         yld(t/ha)      
+        2021           1 rice140            23.90830       76.27694       3.190396    
