@@ -127,7 +127,7 @@
 
       if (bsn_cc%uhyd==1)then
       open(100100,file="paddy_daily.csv") !temporary output for paddy Jaehak 2022 
-      write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT" 
+      write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT,","PhuBase0,","PhuMat," 
       end if
       !! simulate watershed processes
       if (time%step < 0) then

@@ -530,12 +530,12 @@
           else
             sedppm=0.
           end if
-          
+
+          ! if (wet_dat_c(ires)%hyd.eq.'paddy' .and. j.eq.2899) then !.and.time%yrs > pco%nyskip) then  !spark, temp
           if (wet_dat_c(ires)%hyd.eq.'paddy') then !.and.time%yrs > pco%nyskip) then
-            j = 1204 ! spark: temp
-           write(100100,'(4(I6,","),20(f20.1,","))') time%yrc,time%mo,time%day_mo,j,w%precip,irrig(j)%applied,hru(j)%water_seep,     &
+           write(100100,'(4(I6,","),20(f20.3,","))') time%yrc,time%mo,time%day_mo,j,w%precip,irrig(j)%applied,hru(j)%water_seep,     &
             pet_day,etday,wet_ob(j)%weir_hgt*1000,wet_ob(j)%depth*1000.,ht2%flo/(hru(j)%area_ha*10.),soil(j)%sw,sedppm,ht2%sed*1000, &
-            wet(j)%no3,ht2%no3,pcom(j)%lai_sum,saltcon 
+            wet(j)%no3,ht2%no3,pcom(j)%lai_sum,saltcon, phubase(j), pcom(j)%plcur(1)%phuacc
           end if
         end if
 
