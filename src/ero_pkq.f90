@@ -18,7 +18,7 @@
 !!    qp_cms       |m^3/s         |peak runoff rate
 !!    ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 !!    ~ ~ ~ SUBROUTINES/FUNCTIONS CALLED ~ ~ ~
-!!    Intrinsic: Log, Exp
+!!    Intrinsic: Log, Expo
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
@@ -31,16 +31,15 @@
 
       integer :: j      !none          |HRU number
       real :: altc      !              |
+      real :: expo      !              | 
       real :: qp_cfs    !ft3/s         |peak flow rate    
       integer :: iob    !              | 
-      real :: xx
       
       j = ihru
       iob = hru(j)%obj_no
       iwst = ob(iob)%wst
       
-      xx = (2. * tconc(j) * Log(1. - wst(iwst)%weat%precip_half_hr))
-      altc = 1. - exp(xx)
+      altc = 1. - expo(2. * tconc(j) * Log(1. - wst(iwst)%weat%precip_half_hr))
       qp_cms = altc * qday / tconc(j)           !! mm/h
       qp_cms = qp_cms * hru(j)%km / 3.6          !! m^3/s
       

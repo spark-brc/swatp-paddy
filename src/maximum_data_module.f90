@@ -20,7 +20,6 @@
         integer :: septic = 0         !! none     |number of types of septic systems
         integer :: plantparm = 0      !! none     |number of total plants in plants.plt
         integer :: fertparm = 0       !! none     |number of total fertilizer in fertilizer.frt
-        integer :: manureparm = 0     !! none     |number of total manures in manure.frt
         integer :: tillparm = 0       !! none     |number of total tillages in tillage.til
         integer :: pestparm = 0       !! none     !number of total pesticides in pesticide.pes
         integer :: pestcom = 0        !! none     !number of total pesticides communities in pesticide.com
@@ -48,7 +47,6 @@
         integer :: tmpfiles = 0       !! none     |max tmp files included in tmp.cli
         integer :: rhfiles = 0        !! none     |max relative humidity files included in hmd.cli
         integer :: slrfiles = 0       !! none     |max solar radiation files included in slr.cli
-        integer :: petfiles = 0       !! none     |max pet files included in pet.cli
         integer :: wndfiles = 0       !! none     |max wind files included in the wnd.cli
         integer :: cal_parms = 0      !! none     |max number of calibration parameters in cal_parms_upd
         integer :: cal_upd = 0        !! none     |max number of calibration parameter updates
@@ -86,15 +84,12 @@
         integer :: res_hyd = 0
         integer :: res_sed = 0
         integer :: res_nut = 0
-        integer :: res_salt = 0 !rtb salt
-        integer :: res_cs = 0 !rtb cs
         integer :: res_weir = 0
         integer :: wet_dat = 0      
         integer :: wet_hyd = 0
         integer :: ch_surf = 0
         integer :: ch_dat = 0
         integer :: ch_init = 0
-        integer :: ch_init_cs = 0 !rtb salt/cs
         integer :: ch_hyd = 0
         integer :: ch_sed = 0
         integer :: ch_nut = 0
@@ -117,14 +112,11 @@
         integer :: pest_ini = 0
         integer :: path_ini = 0
         integer :: hmet_ini = 0
-        integer :: salt_ini = 0 !rtb salt
-        integer :: salt_gw_ini = 0 !rtb salt
-        integer :: cs_ini = 0 !rtb cs
+        integer :: salt_ini = 0
         integer :: pestw_ini = 0
         integer :: pathw_ini = 0
         integer :: hmetw_ini = 0
-        integer :: salt_cha_ini = 0 !rtb salt
-        integer :: cs_cha_ini = 0 !rtb cs
+        integer :: saltw_ini = 0
         integer :: sep = 0
         integer :: ch_lte = 0
         integer :: om_water_init = 0
@@ -138,7 +130,6 @@
         integer :: recall_max = 0
         integer :: object_prt = 0
         integer :: ctbl_res
-        integer :: ch_sednut
       end type data_files_max_elements
       type (data_files_max_elements), save :: db_mx
                                  

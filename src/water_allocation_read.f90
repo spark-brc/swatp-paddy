@@ -26,7 +26,6 @@
       integer :: idb_irr
       integer :: ihru
       integer :: isrc_wallo
-      integer :: div_found
       
       eof = 0
       imax = 0
@@ -74,26 +73,12 @@
             wallo(iwro)%src(i)%num = i
             if (eof < 0) exit
             backspace (107)
-            read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ
-            backspace (107)
-            !! if source is diversion into the basin, read the recall name
-            if (wallo(iwro)%src(i)%ob_typ == "div_in") then
-              read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ, wallo(iwro)%src(i)%div_rec
-              !! xwalk with recall.rec
-              do idb = 1, db_mx%recall_max
-                if (wallo(iwro)%src(i)%div_rec == recall(idb)%name) then
-                  wallo(iwro)%src(i)%rec_num = idb
-                  exit
-                end if
-              end do
-            else
-              read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ, wallo(iwro)%src(i)%ob_num,    &
+            read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ, wallo(iwro)%src(i)%ob_num,    &
                                                                   wallo(iwro)%src(i)%limit_mon
-              !! call wallo_control from channel
-              if (wallo(iwro)%src(i)%ob_typ == "cha") then
-                sd_ch(wallo(iwro)%src(i)%ob_num)%wallo = iwro
-                wallo(iwro)%cha = wallo(iwro)%src(i)%ob_num
-              end if
+            !! call wallo_control from channel
+            if (wallo(iwro)%src(i)%ob_typ == "cha") then
+              sd_ch(wallo(iwro)%src(i)%ob_num)%wallo = iwro
+              wallo(iwro)%cha = wallo(iwro)%src(i)%ob_num
             end if
           end do
           
@@ -192,28 +177,6 @@
             end do
             
           end do
-          
-          !if canal diversions are used as source water, read in the number of days that diversion water can be
-          !available for irrigation (rtb)
-          div_found = 0
-          do isrc = 1, wallo(iwro)%src_obs
-            if(wallo(iwro)%src(isrc)%ob_typ == "div") then
-              div_found = 1
-            endif
-          enddo
-          if(div_found == 1) then
-            !prepare array
-            allocate(div_volume_daily(sp_ob%recall))
-            allocate(div_volume_total(sp_ob%recall))
-            allocate(div_volume_used(sp_ob%recall))
-            div_volume_daily = 0.
-            div_volume_total = 0.
-            div_volume_used = 0.
-            !read the days parameter
-            read(107,*)
-            read(107,*) div_delay
-            div_delay = Exp(-1./(div_delay + 1.e-6))
-          endif
           
         end do
 

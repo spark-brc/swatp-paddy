@@ -9,27 +9,31 @@
       use constituent_mass_module
       use reservoir_module
       use pesticide_data_module
-      use res_salt_module
-      use res_cs_module
       use reservoir_conditions_module
       
       implicit none
 
+      integer :: mon
       integer :: i
+      real :: lnvol
       
       character (len=80) :: titldum   !           |title of file
       character (len=80) :: header    !           |header of file
+      character (len=16) :: namedum   !           |
       integer :: eof                  !           |end of file
       integer :: imax                 !none       |determine max number for array (imax) and total number in file
       logical :: i_exist              !none       |check to determine if file exists
       integer :: ires                 !none       |counter 
       integer :: k                    !           |
+      integer :: iinit                !none       |counter 
       integer :: ihyd                 !none       |counter
       integer :: irel                 !none       |counter 
       integer :: ised                 !none       |counter
       integer :: inut                 !none       |counter
+      integer :: ipst                 !none       |counter
       integer :: isp_ini              !          |
       integer :: ics                  !none      |counter
+      integer :: iob                  !none      |counter
       
       eof = 0
       imax = 0
@@ -69,9 +73,7 @@
          backspace (105)
          read (105,*,iostat=eof) k, res_dat_c(ires)
          if (eof < 0) exit
-       end do
-       
-       do ires = 1, db_mx%res_dat
+
         !! initialize organics and minerals in water
         do isp_ini = 1, db_mx%res_init
           if (res_dat_c(ires)%init == res_init_dat_c(isp_ini)%init) then
@@ -107,8 +109,7 @@
         end do
 
          do ihyd = 1, db_mx%res_hyd
-           if (res_hyddb(ihyd)%name == res_dat_c(ires)%hyd) then
-             res_hyd(ires) = res_hyddb(ihyd)
+           if (res_hyd(ihyd)%name == res_dat_c(ires)%hyd) then
              res_dat(ires)%hyd = ihyd
              exit
            end if
@@ -134,9 +135,6 @@
           
          do ised = 1, db_mx%res_sed
            if (res_sed(ised)%name == res_dat_c(ires)%sed) then
-             res_prm(ires)%sed = res_sed(ised)
-             !! d50 - micro meters
-             res_prm(ires)%sed_stlr_co = exp(-0.184 * res_prm(ires)%sed%d50)
              res_dat(ires)%sed = ised
              exit
            end if
@@ -144,12 +142,10 @@
 
          do inut = 1, db_mx%res_nut
            if (res_nut(inut)%name == res_dat_c(ires)%nut) then
-             res_prm(ires)%nut = res_nut(inut)
              res_dat(ires)%nut = inut
              exit
            end if
          end do   
-         
 
        if (res_dat(ires)%hyd == 0) write (9001,*) res_dat_c(ires)%hyd, " not found (res-hyd)"
        if (res_dat(ires)%release == 0) write (9001,*) res_dat_c(ires)%release, " not found (res-release)"         

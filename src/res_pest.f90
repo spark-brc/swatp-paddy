@@ -6,13 +6,14 @@
       use reservoir_data_module
       use reservoir_module
       use res_pesticide_module
-      use hydrograph_module, only : res, ob, ht2
+      use hydrograph_module, only : res, ob, ht2, wbody
       use constituent_mass_module
       use pesticide_data_module
       use water_body_module
       
       implicit none      
       
+      integer, intent (in) :: jres
       real :: tpest1                !mg pst        |amount of pesticide in water
       real :: tpest2                !mg pst        |amount of pesticide in benthic sediment
       real :: kd                    !(mg/kg)/(mg/L) |koc * carbon
@@ -32,21 +33,20 @@
       integer :: ipseq          !none       |sequential basin pesticide number
       integer :: ipdb           !none       |seqential pesticide number of daughter pesticide
       integer :: imeta          !none       |pesticide metabolite counter
-      integer :: jres               !none          |reservoir number  
-      integer :: ipst               !none          |counter
       integer :: icmd               !none          |
       integer :: jsed               !none          |counter
       integer :: idb                !none          |
+      integer :: ipst                !none          |
 
-      if (res(jres)%flo > 1.) then
+      if (wbody%flo > 1.) then
           
       do ipst = 1, cs_db%num_pests
         icmd = res_ob(jres)%ob
         idb = ob(icmd)%props
         ipest_db = cs_db%pest_num(ipst)
         jsed = res_dat(idb)%sed
-        respst_d(jres)%pest(ipst)%tot_in = obcs(icmd)%hin(1)%pest(ipst)
-        tpest1 = obcs(icmd)%hin(1)%pest(ipst) + res_water(jres)%pest(ipst)
+        respst_d(jres)%pest(ipst)%tot_in = obcs(icmd)%hin%pest(ipst)
+        tpest1 = obcs(icmd)%hin%pest(ipst) + res_water(jres)%pest(ipst)
         bedvol = 1000. * res_wat_d(jres)%area_ha * pestdb(ipest_db)%ben_act_dep + .01
         tpest2 = res_benthic(jres)%pest(ipst) * bedvol
 
@@ -194,14 +194,12 @@
         !! update concentration of pesticide in lake water and sediment
         if (tpest1 < 1.e-10) tpest1 = 0.0
         if (tpest2 < 1.e-10) tpest2 = 0.0
-        res_water(jres)%pest(ipst) = tpest1
-        res_benthic(jres)%pest(ipst) = tpest2
+        res_water(jres)%pest(ipst) = tpest1 / res(jres)%flo
+        res_benthic(jres)%pest(ipst) = tpest2 / bedvol
         
-        !! set outgoing pesticide for routing
-        hcs2%pest(ipst) = solpesto + sorpesto
-
-      end do    ! ipst = 1, cs_db%num_pests
-      end if    ! res(jres)%flo > 1.
+        ht2%pest = ht2%pest + solpesto ! pesticide leaving the reservoir/wetland/paddy in discharge water Jaehak 2023
+      end do
+      end if
 
       return
       end subroutine res_pest

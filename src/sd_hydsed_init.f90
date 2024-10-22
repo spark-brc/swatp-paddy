@@ -7,28 +7,24 @@
       use hydrograph_module
       use constituent_mass_module
       use pesticide_data_module
-      use basin_module
       
       implicit none      
 
       real :: kh
-      integer :: idb, idb1              !             |
-      integer :: i                      !none         |counter  
-      integer :: iob, ichdat
+      integer :: idb                  !             |
+      integer :: i                    !none         |counter  
+      integer :: icon, iob, ichdat
       integer :: ich_ini                !none      |counter
       integer :: iom_ini                !none      |counter
       integer :: ipest_ini              !none      |counter
       integer :: ipest_db               !none      |counter
       integer :: ipath_ini              !none      |counter
-      integer :: isalt_ini							!none      |counter
-      integer :: ics_ini                !none      |counter
       integer :: ipest                  !none      |counter
       integer :: ipath                  !none      |counter
       integer :: idat
       integer :: i_dep                  !none      |counter
+      integer :: ifp_dep                !none      |counter
       integer :: icha
-      integer :: isalt
-      integer :: ics
       
       real :: aa                      !none         |area/area=1 (used to calculate velocity with
                                       !             |Manning"s equation)
@@ -45,9 +41,16 @@
       integer :: max                  !             |
       real :: rh                      !m            |hydraulic radius
       real :: qman                    !m^3/s or m/s |flow rate or flow velocity
+      real :: tt1                     !km s/m       |time coefficient for specified depth
+      real :: tt2                     !km s/m       |time coefficient for bankfull depth
+      real :: qq1                     !m^3/s        |flow rate for a specified depth
       real :: bedvol                  !m^3          |volume of river bed sediment
       
       real :: dep                     !             |
+      real :: area                    !             |
+      real :: a_bf                    !             |
+      real :: p_bf                    !             |
+      real :: flo_rate                !             |
       real :: vel                     !             |
       real :: flow_dep
       real :: celerity
@@ -59,13 +62,11 @@
       real :: denom        !none              |variable to hold intermediate calculation
       real :: rto          !none              |ratio of channel volume to total volume
       real :: rto1         !none              |ratio of flood plain volume to total volume
-      real :: sumc         !none              |sum of Muskingum coefficients
       
       do i = 1, sp_ob%chandeg
         icmd = sp_ob1%chandeg + i - 1
         idat = ob(icmd)%props
         idb = sd_dat(idat)%hyd
-        idb1 = sd_dat(idat)%sednut
         sd_ch(i)%name = sd_chd(idb)%name
         sd_ch(i)%obj_no = icmd
         sd_ch(i)%order = sd_chd(idb)%order
@@ -75,24 +76,22 @@
         if (sd_ch(i)%chs < 1.e-9) sd_ch(i)%chs = .000001
         sd_ch(i)%chl = sd_chd(idb)%chl
         sd_ch(i)%chn = sd_chd(idb)%chn
-        if (sd_ch(i)%chn < .05) sd_ch(i)%chn = .05   !***jga
+        if (sd_ch(i)%chn < 1.e-9) sd_ch(i)%chn = .05
         sd_ch(i)%chk = sd_chd(idb)%chk      
         sd_ch(i)%cherod = sd_chd(idb)%cherod
         sd_ch(i)%cov = sd_chd(idb)%cov
         sd_ch(i)%sinu = sd_chd(idb)%sinu
         if (sd_ch(i)%sinu < 1.05) sd_ch(i)%sinu = 1.05
         sd_ch(i)%chseq = sd_chd(idb)%chseq
-        if (sd_ch(i)%chseq < 1.e-6) sd_ch(i)%chseq = 0.5
+        if (sd_ch(i)%chseq < 1.e-9) sd_ch(i)%chseq = .000001
         sd_ch(i)%d50 = sd_chd(idb)%d50
         sd_ch(i)%ch_clay = sd_chd(idb)%ch_clay
         sd_ch(i)%carbon = sd_chd(idb)%carbon
         sd_ch(i)%ch_bd = sd_chd(idb)%ch_bd
         sd_ch(i)%chss = sd_chd(idb)%chss
-        sd_ch(i)%n_conc = sd_chd(idb)%n_conc
-        sd_ch(i)%p_conc = sd_chd(idb)%p_conc
-        sd_ch(i)%p_bio = sd_chd(idb)%p_bio
-        sd_ch(i)%bankfull_flo = sd_chd(idb)%bankfull_flo
-        if (sd_ch(i)%bankfull_flo <= 1.e-6) sd_ch(i)%bankfull_flo = 0.
+        sd_ch(i)%bedldcoef = sd_chd(idb)%bedldcoef
+        if (sd_ch(i)%bedldcoef > 1.) sd_ch(i)%bedldcoef = 0.
+        if (sd_ch(i)%bedldcoef <= 1.e-6) sd_ch(i)%bedldcoef = .0
         sd_ch(i)%fps = sd_chd(idb)%fps
         if (sd_ch(i)%fps > sd_ch(i)%chs) sd_ch(i)%fps = sd_ch(i)%chs
         if (sd_ch(i)%fps <= 1.e-6) sd_ch(i)%fps = .00001       !!! nbs 1/24/22
@@ -100,23 +99,12 @@
         sd_ch(i)%hc_kh = gully(0)%hc_kh
         sd_ch(i)%hc_hgt = gully(0)%hc_hgt
         sd_ch(i)%hc_ini = gully(0)%hc_ini
-        sd_ch(i)%pk_rto = sd_chd1(idb1)%pk_rto
-        sd_ch(i)%fp_inun_days = sd_chd1(idb1)%fp_inun_days
-        sd_ch(i)%n_setl = sd_chd1(idb1)%n_setl
-        sd_ch(i)%p_setl = sd_chd1(idb1)%p_setl
-        sd_ch(i)%n_sol_part = sd_chd1(idb1)%n_sol_part
-        sd_ch(i)%p_sol_part = sd_chd1(idb1)%p_sol_part
-        sd_ch(i)%n_dep_enr = sd_chd1(idb1)%n_dep_enr
-        sd_ch(i)%p_dep_enr = sd_chd1(idb1)%p_dep_enr
-        sd_ch(i)%arc_len_fr = sd_chd1(idb1)%arc_len_fr
-        sd_ch(i)%part_size = sd_chd1(idb1)%part_size
-        sd_ch(i)%wash_bed_fr = sd_chd1(idb1)%wash_bed_fr
           
         !! compute headcut parameters
         kh = sd_ch(i)%hc_kh
         if (kh > 1.e-6) then
           sd_ch(i)%hc_co = .37 * (17.83 + 16.56 * kh - 15. * sd_ch(i)%cov)
-          sd_ch(i)%hc_co = max (0., sd_ch(i)%hc_co)
+          sd_ch(i)%hc_co = amax1 (0., sd_ch(i)%hc_co)
         else
           sd_ch(i)%hc_co = 0.
         end if
@@ -176,9 +164,6 @@
       if (det > detmax) then
         sd_ch(i)%msk%substeps = Int(det / detmax) + 1
       end if
-      if (bsn_cc%rte == 0 .and. time%step <= 1) then
-        sd_ch(i)%msk%substeps = 1
-      end if
       sd_ch(i)%msk%nsteps = time%step * sd_ch(i)%msk%substeps
               
         !! intial inflow-outflow
@@ -191,14 +176,8 @@
         det = det / sd_ch(i)%msk%substeps
         denom = 2. * xkm * (1. - bsn_prm%msk_x) + det
         sd_ch(i)%msk%c1 = (det - 2. * xkm * bsn_prm%msk_x) / denom
-        sd_ch(i)%msk%c1 = Max(0., sd_ch(i)%msk%c1)
         sd_ch(i)%msk%c2 = (det + 2. * xkm * bsn_prm%msk_x) / denom
         sd_ch(i)%msk%c3 = (2. * xkm * (1. - bsn_prm%msk_x) - det) / denom
-        !! c1+c2+c3 must equal 1
-        sumc = sd_ch(i)%msk%c1 + sd_ch(i)%msk%c2 + sd_ch(i)%msk%c3
-        sd_ch(i)%msk%c1 = sd_ch(i)%msk%c1 / sumc
-        sd_ch(i)%msk%c2 = sd_ch(i)%msk%c2 / sumc
-        sd_ch(i)%msk%c3 = sd_ch(i)%msk%c3 / sumc
 
       end do    !end of channel loop
  
@@ -266,44 +245,16 @@
       end do
       
       ! initialize pathogens in channel water and benthic from input data
-      do ich = 1, sp_ob%chandeg
-        iob = sp_ob1%chandeg + ich - 1
-        ichdat = ob(iob)%props
-        ich_ini = sd_dat(ichdat)%init
-        ipath_ini = sd_init(ich_ini)%path
-        do ipath = 1, cs_db%num_paths
-          ch_water(ich)%path(ipath) = path_water_ini(ipest_ini)%water(ipath)
-          ch_benthic(ich)%path(ipath) = path_water_ini(ipest_ini)%benthic(ipath)
-        end do
-      end do
-      
-      !initial salt ion concentration (g/m3) in channel water, from input data (salt_channel.ini)
-      if(cs_db%num_salts > 0) then
-        do ich=1,sp_ob%chandeg
-          iob = sp_ob1%chandeg + ich - 1
-          ichdat = ob(iob)%props
-          ich_ini = sd_dat(ichdat)%init
-          isalt_ini = sd_init(ich_ini)%salt
-          do isalt=1,cs_db%num_salts
-            ch_water(ich)%saltc(isalt) = salt_cha_ini(isalt_ini)%conc(isalt) !g/m3
-            ch_water(ich)%salt(isalt) = (salt_cha_ini(isalt_ini)%conc(isalt)/1000.) * tot_stor(ich)%flo !kg
-          enddo
-        enddo
-      endif
+      !do ich = 1, sp_ob%chandeg
+      !  iob = sp_ob1%chandeg + ich - 1
+      !  ichdat = ob(iob)%props
+      !  ich_ini = sd_dat(ichdat)%init
+      !  ipath_ini = sd_init(ich_ini)%path
+      !  do ipath = 1, cs_db%num_paths
+      !    ch_water(ich)%path(ipath) = path_water_ini(ipest_ini)%water(ipath)
+      !    ch_benthic(ich)%path(ipath) = path_water_ini(ipest_ini)%benthic(ipath)
+      !  end do
+      !end do
 
-      !initial constituent concentration (g/m3) in channel water, from input data (cs_channel.ini)
-      if(cs_db%num_cs > 0) then
-        do ich=1,sp_ob%chandeg
-          iob = sp_ob1%chandeg + ich - 1
-          ichdat = ob(iob)%props
-          ich_ini = sd_dat(ichdat)%init
-          ics_ini = sd_init(ich_ini)%cs
-          do ics=1,cs_db%num_cs
-            ch_water(ich)%csc(ics) = cs_cha_ini(ics_ini)%conc(ics)
-            ch_water(ich)%cs(ics) = (cs_cha_ini(ics_ini)%conc(ics)/1000.) * tot_stor(ich)%flo !kg
-          enddo
-        enddo
-			endif
-      
       return
       end subroutine sd_hydsed_init

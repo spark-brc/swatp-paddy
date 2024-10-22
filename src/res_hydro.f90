@@ -1,4 +1,4 @@
-      subroutine res_hydro (jres, id, pvol_m3, evol_m3)
+      subroutine res_hydro (jres, id, ihyd, pvol_m3, evol_m3, dep, weir_hgt)
 
       use reservoir_data_module
       use reservoir_module
@@ -15,17 +15,20 @@
       
       real,  intent (in) :: pvol_m3
       real,  intent (in) :: evol_m3
+      real,  intent (in) :: dep       !m 
+      real,  intent (in) :: weir_hgt  !m         |height of weir overflow crest from reservoir bottom
       integer,  intent (in) :: jres             !none      |hru number
       integer :: iweir             !none      |weir ID 
       integer :: nstep            !none      |counter
       integer :: tstep            !none      |hru number
       integer :: iac              !none      |counter 
       integer :: ic              !none      |counter
-      !integer :: weir_flg=0        !none      |counter
+      integer :: weir_flg=0        !none      |counter
       integer,  intent (in) :: id               !none      |hru number
       integer :: ial              !none      |counter
       integer :: irel             !          |
       integer :: iob              !none      |hru or wro number
+      integer,  intent (in) :: ihyd             !          |
       real :: vol,vol_above                 !          |
       real :: b_lo                !          |
       character(len=1) :: action  !          |
@@ -36,17 +39,12 @@
       real :: hgt                 !m         |height of bottom of weir above bottom of impoundment
       real :: hgt_above           !m         |height of water above the above bottom of weir
       real :: sto_max             !m3        |maximum storage volume at the bank top
+      
       !! store initial values
       vol = wbody%flo
       nstep = 1
       wsa1 = wbody_wb%area_ha * 10000. !m2
- 
-      if (time%step>0) then  !Jaehak 2024
-	    nstep = time%step
-	  else
-	    nstep = 1
-	  end if
-	  
+      
       do tstep = 1, nstep
 
         !calc release from decision table
@@ -67,42 +65,12 @@
           if (action == "y") then
             select case (d_tbl%act(iac)%option)
             case ("rate")
-              !! release at constant rate
-              ht2%flo = ht2%flo + d_tbl%act(iac)%const * 86400.
-              
-            case ("rate_pct")
-              !! release at percentage of principal volume
-              ht2%flo = ht2%flo + d_tbl%act(iac)%const * pvol_m3 / 100.
+              ht2%flo = d_tbl%act(iac)%const * 86400.
               
             case ("inflo_rate")
-              !! JK: added functionality to use const2 to reduce/increase inflow variable - const is max release
-              ht2%flo = ht2%flo + max (ht1%flo + dtbl_res(id)%act(iac)%const2 * 86400., dtbl_res(id)%act(iac)%const * 86400.)
-              
-            case ("inflo_frac")
-              !! release at fraction of inflow
-              ht2%flo = ht2%flo + ht1%flo * dtbl_res(id)%act(iac)%const
-              
-            case ("ab_emer")
-              !! release all volume above emergency
-              if (wbody%flo > evol_m3) ht2%flo = ht2%flo + (wbody%flo - evol_m3)
+              ht2%flo = amax1 (ht1%flo, d_tbl%act(iac)%const * 86400.)
               
             case ("days")
-              !! release based on drawdown days
-              select case (dtbl_res(id)%act(iac)%file_pointer)
-                case ("null")
-                  b_lo = 0.
-                case ("pvol")
-                  b_lo = pvol_m3 * d_tbl%act(iac)%const2
-                case ("evol")
-                  b_lo = evol_m3 * d_tbl%act(iac)%const2
-              end select
-              ht2%flo = ht2%flo + (wbody%flo - b_lo) / d_tbl%act(iac)%const / nstep
-              ht2%flo = max(0.,ht2%flo)
-              wbody%flo = max(0.,wbody%flo - ht2%flo)
-              vol = wbody%flo
-             
-            case ("dyrt")
-              !! release based on drawdown days + percentage of principal volume
               select case (dtbl_res(id)%act(iac)%file_pointer)
                 case ("null")
                   b_lo = 0.
@@ -111,20 +79,21 @@
                 case ("evol")
                   b_lo = evol_m3
               end select
-              b_lo = max (0., b_lo)
-              ht2%flo = ht2%flo + (wbody%flo - b_lo) / d_tbl%act(iac)%const +           &
-                                         d_tbl%act(iac)%const2 * pvol_m3 / 100. / nstep
+              ht2%flo = ht2%flo + (wbody%flo - b_lo) / d_tbl%act(iac)%const
               ht2%flo = max(0.,ht2%flo)
-              
-            case ("dyrt1")
+              wbody%flo = max(0.,wbody%flo - ht2%flo)
+              vol = wbody%flo
+            case ("dyrt")
               !for base volume for drawdown days, use condition associated with action
               select case (d_tbl%act(iac)%file_pointer)
                 case ("con1")
-                  ic = 5    !NAM setup
+                  ic = 1
                 case ("con2")
-                  ic = 4    !NAM setup
+                  ic = 2
                 case ("con3")
-                  ic = 3    !NAM setup
+                  ic = 3
+                case ("con4")
+                  ic = 4
               end select
               !perform operation on target variable to get target
               select case ((d_tbl%cond(ic)%lim_op))
@@ -139,38 +108,25 @@
               case ("/")
                 b_lo = (evol_m3 - pvol_m3) / d_tbl%cond(ic)%lim_const
               end select
-              b_lo = max (0., b_lo)
-              ht2%flo = ht2%flo + (wbody%flo - b_lo) / d_tbl%act(iac)%const +           &
-                                         d_tbl%act(iac)%const2 * pvol_m3 / 100. / nstep
-              ht2%flo = max(0.,ht2%flo)
-              
-            case ("inflo_targ")
-              !! release inflow + all volume over target (pvol_m3), use condition associated with action
-              ic = int (d_tbl%act(iac)%const)
-              b_lo = pvol_m3 * d_tbl%cond(ic)%lim_const
-              
-              ht2%flo = ht2%flo + ht1%flo + (wbody%flo - b_lo)
-              ht2%flo = max(0.,ht2%flo)
+              ht2%flo = (wbody%flo - b_lo) / d_tbl%act(iac)%const + d_tbl%act(iac)%const2 * pvol_m3 / 100.
               
             case ("irrig_dmd")
-              !! release based on irrigation demand of hru or water rights object
               iob = Int(d_tbl%act(iac)%const2)
               select case (d_tbl%act(iac)%file_pointer)
-              case ("wro")    !demand from water rights object
+              case ("wro")    !demand from water resource object
                 demand = wallo(iob)%tot%demand
               case ("hru")    !demand from single hru
                 demand = irrig(iob)%demand
               end select
               !! const allows a fraction (usually > 1.0) of the demand (m3) released
-              ht2%flo = ht2%flo + demand * d_tbl%act(iac)%const / nstep
-              ht2%flo = max(0.,ht2%flo)
+              ht2%flo = demand * d_tbl%act(iac)%const
                  
             case ("weir")
-              !! release based on weir equation
-              iweir = d_tbl%act_typ(iac)
-              res_h = vol / wsa1     !m
-              hgt_above = max(0., res_h - wet_ob(jres)%weir_hgt)    !m
-              if (nstep>24) then !hourly interval
+              iweir = d_tbl%act_typ(iac)  !Jaehak 2023
+              res_h = vol / wsa1 !m
+              hgt_above = max(0.,res_h - weir_hgt)  !m Jaehak 2022
+
+              if (nstep>1) then
                 ht2%flo = res_weir(iweir)%c * res_weir(iweir)%w * hgt_above ** res_weir(iweir)%k !m3/s
                 ht2%flo = max(0.,86400. / nstep * ht2%flo) !m3
                 vol = vol - ht2%flo
@@ -186,35 +142,30 @@
                     ht2%flo = ht2%flo + qout 
                     vol = vol - qout
                   end if
+                              
                   res_h = vol / wsa1 !m
-                  hgt_above = max(0.,res_h - wet_ob(jres)%weir_hgt)  !m Jaehak 2022
+                  hgt_above = max(0.,res_h - weir_hgt)  !m Jaehak 2022
                   if (vol_above<=0.001.or.hgt_above<=0.0001) exit
+                  
                 end do
 
               endif
               res_h = vol / wsa1 !m
               wbody%flo = vol !m3
-              iweir = d_tbl%act_typ(iac)
-              ht2%flo = ht2%flo + res_weir(iweir)%c * res_weir(iweir)%w * hgt_above ** res_weir(iweir)%k / nstep   !m3/s
-              ht2%flo = ht2%flo + max(0.,ht2%flo)
-              
+
             case ("meas")
-              !! measured outflow or release
               irel = int(d_tbl%act_typ(iac))
               select case (recall(irel)%typ)
               case (1)    !daily
-                ht2%flo = ht2%flo + recall(irel)%hd(time%day,time%yrs)%flo / nstep
+                ht2%flo = recall(irel)%hd(time%day,time%yrs)%flo
               case (2)    !monthly
-                ht2%flo = ht2%flo + recall(irel)%hd(time%mo,time%yrs)%flo / nstep
+                ht2%flo = recall(irel)%hd(time%mo,time%yrs)%flo
               case (3)    !annual
-                ht2%flo = ht2%flo + recall(irel)%hd(1,time%yrs)%flo / nstep
+                ht2%flo = recall(irel)%hd(1,time%yrs)%flo
               end select
-              ht2%flo = max(0.,ht2%flo)
-              
             end select
-          
-          end if    ! if action hit
-          
+          end if    ! if action hit 
+            
         end do      ! iac - actions loop
       end do    !tstep loop
 

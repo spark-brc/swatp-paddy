@@ -44,7 +44,4 @@
       type (time_current) :: time
       type (time_current) :: time_init
 
-      !elapsed simulation time
-      !real :: sim_start,sim_finish
-      
       end module time_module

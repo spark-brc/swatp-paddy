@@ -1,6 +1,6 @@
       subroutine layersplit(dep_new)
 
-      use hru_module, only : ihru
+      use hru_module, only : ihru, isep_ly
       use soil_module
       use organic_mineral_mass_module
       use constituent_mass_module
@@ -10,7 +10,9 @@
       integer :: nly               !none         |end of loop
       integer :: nly1              !             |
       integer :: lyn               !none         |counter
+      integer :: j                 !             |
       integer :: ly                !none         |counter
+      real :: dif                  !             |
 	  real, intent(in):: dep_new   !             |
       
 	  nly = soil(ihru)%nly

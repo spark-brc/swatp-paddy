@@ -18,9 +18,14 @@
 !!    ~ ~ ~ LOCAL DEFINITIONS ~ ~ ~
 !!    name        |units         |definition
 !!    ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+!!    gx          |mm            |lowest depth in layer from which phosphorus
+!!                               |may be removed
 !!    icrop       |none          |land cover code
+!!    ir          |none          |flag for bottom of root zone
 !!    j           |none          |HRU number
+!!    l           |none          |counter (soil layers)
 !!    uapd        |kg P/ha       |plant demand of phosphorus
+!!    uapl        |kg P/ha       |amount of phosphorus removed from layer
 !!    up2         |kg P/ha       |optimal plant phosphorus content
 !!    upmx        |kg P/ha       |maximum amount of phosphorus that can be
 !!                               |removed from the soil layer
@@ -33,14 +38,19 @@
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
       use plant_data_module
-      use hru_module, only : up2, uapd, ihru, ipl
+      use hru_module, only : up2, uapd, ihru, ipl, uptake
       use plant_module
       use organic_mineral_mass_module
 
       implicit none
 
       integer :: idp
+      integer :: icrop       !none      |land cover code
       integer :: j           !none      |hru number
+      integer :: l           !none      |counter (soil layer)
+      integer :: ir          !none      |flag to denote bottom of root zone reached
+      real :: uapl           !kg P/ha   |amount of phosphorus removed from layer
+      real :: gx             !mm        |lowest depth in layer from which nitrogen may be removed
       real :: matur_frac     !frac      |fraction to maturity - use hu for annuals and years to maturity for perennials
 
       j = ihru
@@ -61,12 +71,6 @@
       up2(ipl) = pcom(j)%plm(ipl)%p_fr * pl_mass(j)%tot(ipl)%m
       if (up2(ipl) < pl_mass(j)%tot(ipl)%p) up2(ipl) = pl_mass(j)%tot(ipl)%p
       uapd(ipl) = up2(ipl) - pl_mass(j)%tot(ipl)%p
-      uapd(ipl) = 1.5 * uapd(ipl)                     !! luxury p uptake
-      
-      !***jga
-      up2(ipl) = pcom(j)%plm(ipl)%p_fr * pl_mass(j)%ab_gr(ipl)%m
-      if (up2(ipl) < pl_mass(j)%ab_gr(ipl)%p) up2(ipl) = pl_mass(j)%ab_gr(ipl)%p
-      uapd(ipl) = up2(ipl) - pl_mass(j)%ab_gr(ipl)%p
       uapd(ipl) = 1.5 * uapd(ipl)                     !! luxury p uptake
  
       return

@@ -3,7 +3,7 @@
       use reservoir_data_module
       use reservoir_module
       use hru_module, only : hru, sedyld, sanyld, silyld, clayld, sagyld, lagyld, grayld, sedminps, sedminpa,   &
-        surqno3, sedorgn, sedorgp, ihru, pet_day, surfq, tconc, usle_cfac, cklsp, hhsurfq
+        surqno3, sedorgn, sedorgp, qdr, ihru, pet_day, qday, surfq, tconc, usle_cfac, cklsp
       use conditional_module
       use climate_module
       use hydrograph_module
@@ -16,31 +16,45 @@
       use mgt_operations_module
       use constituent_mass_module
       use aquifer_module
-      use gwflow_module
       
       implicit none
      
       real :: bypass = 1.             !              | 
+      real :: fracwet                 !              | 
       integer :: j                    !none          |counter
+      integer :: iprop                !              |  
+      integer :: iac                  !none          |counter
+      character(len=1) :: action           !         |
+      integer :: ial                  !none          |counter
+      real :: b_lo                    !              |
+      real :: res_h                   !              |
       real :: x1                      !              |
       real :: wet_h                   !              |
-      real :: wet_h1                  !              | 
+      real :: wet_h1                  !              |
+      real :: flwi                    !m^3 H2O       |water entering pothole on day  
+      real :: flwo                    !              |
+      real :: sedi                    !metric tons   |sediment entering pothole on day
+      real :: sedo                    !metric tons   |sed leaving res 
+      integer :: k                    !              | 
+      integer :: ii                   !none          |counter 
+      integer :: jres                 !none          |reservoir number
+      integer :: idat                 !              |
+      integer :: ihyd                 !none          |counter
       integer :: ised                 !none          |counter
       integer :: irel                 !              |
-      integer :: icon                 !none          |counter: identifies parameter list in cs_res (rtb cs)
+      integer :: inut                 !none          |counter
+      integer :: ipst                 !none          |counter
       integer :: ires = 0
-      integer :: j1
-      integer :: ii                   !none          |sub daily time step counter
-      integer :: ihyd                 !none          |counter  !Jaehak 2024
-      integer :: isched                !none          |counter  !Jaehak 2024
+      integer :: iob,irrop,iout,j1,isched             !              |
       real :: wet_fr = 0.
       real :: pvol_m3
       real :: evol_m3
       real :: dep
-      real :: weir_hgt,wsa1,sedppm,no3ppm,seep_rto,qp_cms,dep_init
-      real :: volseep, volex, swst(20)
+      real :: weir_hgt,wsa1,sedppm,no3ppm,seep_rto,flo_init,qp_cms,qmm,dep_init,satk,rto
+	    real :: volseep, volex, swst(20)	  
+
       j = ihru
-      ires = hru(j)%dbs%surf_stor
+      ires= hru(j)%dbs%surf_stor
       ihyd = wet_dat(ires)%hyd
       ised = wet_dat(ires)%sed
       irel = wet_dat(ires)%release
@@ -49,14 +63,7 @@
       wet_wat_d(j)%area_ha = hru(j)%area_ha
       
       !! zero outgoing flow 
-      ht2 = resz
-      
-      
-      !! set water body pointer to res
-      wbody => wet(j)
-      wbody_wb => wet_wat_d(j)
-      wbody_prm => wet_prm(j)
-      
+      ht2 = resz 
 
       !! initialize variables for wetland daily simulation
       hru(j)%water_seep = 0.
@@ -72,6 +79,7 @@
       wet(j)%flo =  wet(j)%flo + irrig(j)%applied * wsa1 !m3
       wet(j)%no3 = wet(j)%no3 + irrig(j)%no3 * irrig(j)%applied * wsa1 * 0.001 !kg
       wet(j)%salt = wet(j)%salt + irrig(j)%salt * irrig(j)%applied * wsa1 * 0.001 !kg
+      
       wet_wat_d(j)%area_ha = 0.
       if (wet(j)%flo > 0.) then  !paddy is assumed flat
         !! update wetland surface area - solve quadratic to find new depth
@@ -86,45 +94,51 @@
         wet_fr = min(wet_fr,1.)
         wet_fr = max(wet_fr,0.01)
         
-        wet_wat_d(j)%area_ha = hru(j)%area_ha * wet_fr
-
-        !calculate seepage and groundwater interactions
-        if(bsn_cc%gwflow == 1) then !rtb gwflow
-          call gwflow_wetl(j)
-        else !original seepage calculations
-          !! infiltration of the standing water to the topsoil layer. 
-          !! Any excess infiltration volume estimated here is reverted (back to waterbody) in swr_satexcess.
-          wet_wat_d(j)%seep = min(wet(j)%flo, hru(j)%wet_hc * 24. * wsa1) !m3   
-        end if !check for gwflow
+        !if (wet_dat_c(ires)%hyd.ne.'paddy') then
+        !  wet_wat_d(j)%area_ha = hru(j)%area_ha * wet_fr
+        !endif 
         
-        ! check potential percolation rate to refine daily seepage rate Jaehak 2022
-        ! actual soil moisture content is updated in percmain
+        !! subtract evaporation  - mm*ha*10.=m3
+        wet_wat_d(j)%evap = pet_day * wet_hyd(ihyd)%evrsv * wsa1 !m3
+        wet_wat_d(j)%evap = min(wet_wat_d(j)%evap, wet(j)%flo)
+        wet(j)%flo = wet(j)%flo - wet_wat_d(j)%evap 
+        hru(j)%water_evap = wet_wat_d(j)%evap / wsa1 !mm
+        !wet(j)%dep = wet(j)%dep - hru(j)%water_evap !mm
+        
+        !! infiltration of the standing water to the topsoil layer. 
+        !! Any excess infiltration volume estimated here is reverted (back to waterbody) in swr_satexcess.
+        !! 
+        wet_wat_d(j)%seep = min(wet(j)%flo, hru(j)%wet_hc * 24. * wsa1) !m3 
+		
+		    ! check potential percolation rate to refine daily seepage rate Jaehak 2022
+		    ! actual soil moisture content is updated in percmain
         volseep = wet_wat_d(j)%seep / wsa1 !mm
-        if (volseep>0.1) then
-          do j1 = 1, soil(j)%nly
-            swst(j1) = soil(j)%phys(j1)%st + volseep
-            if (swst(j1)>soil(j)%phys(j1)%ul*0.9) then !oversaturated Jaehak 2022
-              volex = swst(j1) - soil(j)%phys(j1)%ul*0.9  !excess water. soil is assumed to remain saturated Jaehak 2022
-              volseep = min(volex, soil(j)%phys(j1)%k*24.)
-              swst(j1) = swst(j1) - volseep
-            else
-              volseep = 0
-            endif
-          end do
+        
+		    if (volseep>0.1) then
+			    do j1 = 1, soil(j)%nly
+				    swst(j1) = soil(j)%phys(j1)%st + volseep
+				    if (swst(j1)>soil(j)%phys(j1)%ul*0.9) then !oversaturated Jaehak 2022
+					    volex = swst(j1) - soil(j)%phys(j1)%ul*0.9  !excess water. soil is assumed to remain saturated Jaehak 2022
+					    volseep = min(volex, soil(j)%phys(j1)%k*24.)
+					    swst(j1) = swst(j1) - volseep
+				    else
+					    volseep = 0
+				    endif
+			    end do
 			
-          ! move excess water upward to calculate daily seepage rate Jaehak 2022
-          volex = 0
-          do j1 = soil(j)%nly, 1, -1
-            swst(j1) = swst(j1) + volex
-            if (swst(j1)>soil(j)%phys(j1)%ul*0.9) then !oversaturated
-              volex = max(0., swst(j1) - soil(j)%phys(j1)%ul*0.9)  !excess water. 
-              swst(j1) = swst(j1) - volex                         !update soil water
-            endif
-          end do
+			    ! move excess water upward to calculate daily seepage rate Jaehak 2022
+			    volex = 0
+			    do j1 = soil(j)%nly, 1, -1
+				    swst(j1) = swst(j1) + volex
+				        if (swst(j1)>soil(j)%phys(j1)%ul*0.9) then !oversaturated
+					        volex = max(0., swst(j1) - soil(j)%phys(j1)%ul*0.9)  !excess water. 
+					    swst(j1) = swst(j1) - volex                         !update soil water
+				    endif
+			    end do
 			
-          !update seepage volume
-          wet_wat_d(j)%seep = max(0., wet_wat_d(j)%seep - volex * wsa1) !m3
-		endif				
+			    !update seepage volume
+			    wet_wat_d(j)%seep = max(0., wet_wat_d(j)%seep - volex * wsa1) !m3
+		    endif				
 				
         wet(j)%flo = wet(j)%flo - wet_wat_d(j)%seep
         wet_wat_d(j)%area_ha = hru(j)%area_ha 
@@ -136,13 +150,14 @@
         else 
           seep_rto = 0.
         endif
+        
         soil1(j)%mn(1)%no3 = soil1(j)%mn(1)%no3 + wet(j)%no3 * seep_rto / hru(j)%area_ha !kg/ha
         soil1(j)%mn(1)%nh4 = soil1(j)%mn(1)%nh4 + wet(j)%nh3 * seep_rto / hru(j)%area_ha !kg/ha
         soil1(j)%mp(1)%act = soil1(j)%mp(1)%act + wet(j)%solp * seep_rto / hru(j)%area_ha !kg/ha
         soil1(j)%water(1)%n = soil1(j)%water(1)%n + wet(j)%orgn * seep_rto / hru(j)%area_ha !kg/ha
         soil1(j)%water(1)%p = soil1(j)%water(1)%p + wet(j)%sedp * seep_rto / hru(j)%area_ha !kg/ha
         soil1(j)%salt = soil1(j)%salt + wet(j)%salt * seep_rto / hru(j)%area_ha !kg/ha
-        
+                
         ! nutrient seepage amount 
         wet_seep_day(j)%no3 = wet(j)%no3 * seep_rto !kg
         wet_seep_day(j)%nh3 = wet(j)%nh3 * seep_rto
@@ -161,7 +176,7 @@
       end if 
         
       !! if not a floodplain wetland
-      !if (hru(j)%wet_fp == "n") then
+      if (hru(j)%wet_fp == "n") then
         !! calc release from decision table
         d_tbl => dtbl_res(irel)
         wbody => wet(j)
@@ -169,7 +184,6 @@
         pvol_m3 = wet_ob(j)%pvol
         evol_m3 = wet_ob(j)%evol
         !if (wet_ob(j)%area_ha > 1.e-6) then
-
         if (hru(j)%area_ha > 1.e-6) then
           !dep = wbody%flo / wet_ob(j)%area_ha / 10000.     !m = m3 / ha / 10000m2/ha
           dep = wet(j)%flo / wsa1 / 1000.    !m 
@@ -179,58 +193,58 @@
         weir_hgt = wet_ob(j)%weir_hgt   !m
         wet_ob(j)%depth = dep           !m
 
-         !! weir discharge by decision tables 
+        !! weir discharge by decision tables 
         if (sched(isched)%num_autos > 0) then
           call conditions (j, irel)
-          call res_hydro(j, irel, pvol_m3, evol_m3)
+          call res_hydro (j, irel, ihyd, pvol_m3, evol_m3, dep, weir_hgt)
           wet(j)%flo = wbody%flo
         endif
-
+        
+        if (hru(j)%area_ha > 1.e-6) then
+          !dep = wbody%flo / wet_ob(j)%area_ha / 10000.     !m = m3 / ha / 10000m2/ha
+          dep = wet(j)%flo / wsa1 / 1000.    !m 
+        else
+          dep = 0.
+        end if
+        
         !! weir discharge by manual operation
-        if (sched(isched)%num_autos == 0.and.dep>0.00001) then
-          call res_weir_release (j, irel, ihyd, evol_m3, dep, weir_hgt)
+        if (sched(isched)%num_autos == 0.and.dep>0.01) then
+          call res_weir_release (j, irel, ihyd, pvol_m3, evol_m3, dep, weir_hgt)
           wet(j)%flo = wbody%flo
         endif
         
         !! discharge from wetlands with no outlet control
         if (wet_dat_c(ires)%hyd.ne.'paddy'.and.wbody%flo>evol_m3) then
-          ht2%flo = ht2%flo + (wbody%flo - evol_m3) 
-          ht2%flo = max(0.,ht2%flo)
-          wbody%flo = evol_m3
-        endif
+        ht2%flo = ht2%flo + (wbody%flo - evol_m3) 
+        ht2%flo = max(0.,ht2%flo)
+        wbody%flo = evol_m3
+      endif
+       
+                  
         !! subtract outflow from storage
+        !wet(j)%flo =  wet(j)%flo - ht2%flo
         surfq(j) = ht2%flo / wsa1 !mm
-        
-        if (time%step > 1) then
-          do ii = 1, time%step
-            !! daily total runoff
-            hhsurfq(j,ii) = surfq(j) / real(time%step)
-          end do
-        end if
+      end if
       
       wet_ob(j)%depth = wet(j)%flo / wsa1 / 1000. !m                       
-       
+             
       !! compute sediment deposition
-      call res_sediment
-      wet(j)%sed = wbody%sed !t
+      call res_sediment (j, ihyd, ised)
       
+      !!! subtract sediment leaving from reservoir
+      wet(j)%sed = wet(j)%sed - ht2%sed
+      wet(j)%sil = wet(j)%sil - ht2%sil
+      wet(j)%cla = wet(j)%cla - ht2%cla
+          
       !! perform reservoir nutrient balance
-      call res_nutrient (j)
-      
-      wet(j)%no3 = wbody%no3  
-      wet(j)%nh3 = wbody%nh3
-      wet(j)%salt = wbody%salt  
-      wet(j)%orgn =wbody%orgn
-      wet(j)%sedp = wbody%sedp 
-      wet(j)%solp = wbody%solp 
-     !! perform salt ion constituent balance
-      call wet_salt(icmd,j)
-      
-      !! perform wetland constituent balance
-      icon = wet_dat(ires)%cs
-      call wet_cs(icmd,icon,j)
+      inut = wet_dat(ires)%nut
+      call res_nutrient (ires, inut, j)
 
-      ! calculate sediment/nutrient yield when wetlands are flushed 
+      wet(j)%no3 = wet(j)%no3 - ht2%no3 
+      wet(j)%nh3 = wet(j)%nh3 - ht2%nh3 
+      wet(j)%salt = wet(j)%salt - ht2%salt 
+
+        ! calculate sediment/nutrient yield when wetlands are flushed 
       if (dep_init<0.0001 .and. ht2%flo>0.) then 
         call ero_cfactor 
         qp_cms = bsn_prm%prf / 6578.6 * hru(j)%area_ha * surfq(j) / tconc(j) / 35.3
@@ -238,6 +252,7 @@
         wet(j)%sed = (10. * surfq(j) * qp_cms * hru(j)%area_ha) ** .56 * cklsp(j) !tons
         sedyld(j) = wet(j)%sed * ht2%flo / (wet(j)%flo + ht2%flo)
         wet(j)%sed = max(0., wet(j)%sed - sedyld(j)) !tons
+        ht2%sed = sedyld(j) !tons sediment yield
         ht2%sed = sedyld(j) !tons sediment yield
       endif  
         
@@ -249,8 +264,16 @@
         no3ppm=0
       endif
       
+
+  
+      !write(100100,'(3(I6,","),11(f10.1,","))') time%yrc,time%mo,time%day_mo,w%precip,irrig(j)%applied,hru(j)%water_seep,&
+      !  weir_hgt*1000,wet(j)%flo/wsa1,ht2%flo/wsa1,soil(j)%sw,wet(j)%sed*1000,ht2%sed*1000,no3ppm,ht2%no3    
+      !write(*,'(3(I6),11(f10.1))') time%yrc,time%mo,time%day_mo,w%precip,irrig(j)%applied,hru(j)%water_seep,&
+      !  weir_hgt*1000,wet(j)%flo/wsa1,ht2%flo/wsa1,soil(j)%sw,wet(j)%sed*1000,ht2%sed*1000,wet(j)%no3,ht2%no3    
+      
       !! perform reservoir pesticide transformations
-      !call res_pest (ires)
+      ipst = wet_dat(ires)%pst
+      call res_pest (ires,ipst,j)
 
       !! set values for routing variables
       ob(icmd)%hd(1)%temp = 0.                  !!undefined
@@ -275,8 +298,10 @@
       
       !! set inflow and outflow variables for reservoir_output
       if (time%yrs > pco%nyskip) then
-        wet_in_d(j) = wet_in_d(j) + ht1 
+        wet_in_d(j) = ht1 
         wet_out_d(j) = ht2
+        !wet_in_d(j)%flo = wet(j)%flo / 10000.   !m^3 -> ha-m
+        !wet_out_d(j)%flo = wet(j)%flo / 10000.  !m^3 -> ha-m
       end if  
 
       return

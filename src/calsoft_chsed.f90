@@ -26,6 +26,7 @@
       real :: chg_val            !          |
       integer :: ich_s           !none      |counter
       integer :: iich            !          |
+      integer :: iihru           !none      |counter
       integer :: icov            !none      |counter
       real :: rmeas              !          |
       real :: denom              !          |

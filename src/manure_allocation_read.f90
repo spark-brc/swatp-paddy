@@ -23,7 +23,9 @@
       integer :: num_objs
       integer :: idmd
       integer :: idb
+      integer :: idb_irr
       integer :: ihru
+      integer :: isrc_mallo
       integer :: idb_man
       
       eof = 0

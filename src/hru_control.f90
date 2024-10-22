@@ -4,24 +4,21 @@
 !!    this subroutine controls the simulation of the land phase of the 
 !!    hydrologic cycle
 
-      use hru_module, only : hru, ihru, tillage_switch,                                           &
-         tillage_days, ndeat, qdr, phubase, sedyld, surfq, grz_days,                              &
-         yr_skip, latq, sepbtm, igrz, iseptic, i_sep, filterw, sed_con, soln_con, solp_con,       & 
-         orgn_con, orgp_con, cnday, percn, tileno3, sedorgn, sedorgp, surqno3, latno3,            &
-         surqsolp, sedminpa, sedminps, fertn, fertp, fixn, grazn, grazp, ipl, qp_cms, qtile,      &
-         snofall, snomlt, usle, canev, ep_day, es_day, etday, inflpcp, isep, iwgen, ls_overq,     &
-         nd_30, pet_day, precip_eff, qday, latqrunon, gwsoilq, satexq, surf_bs, bss, bss_ex, brt, &
-         gwsoiln, gwsoilp, satexn, satexq_chan, surqsalt, latqsalt, tilesalt, percsalt, urbqsalt, & !rtb gwflow; rtb salt
-         wetqsalt, wtspsalt,gwupsalt,                                                             &
-         surqcs, latqcs, tilecs, perccs, gwupcs, sedmcs, urbqcs, wetqcs, wtspcs                         !rtb cs
-                                                                                                                                        !HAK 7/27/22
+      use hru_module, only : hru, ihru, tillage_switch,     &
+         tillage_days, ndeat, qdr, phubase, sedyld, surfq, grz_days,                                    &
+         yr_skip, latq, tconc, smx, sepbtm, igrz, iseptic, i_sep, filterw, sed_con, soln_con, solp_con, & 
+         orgn_con, orgp_con, cnday, nplnt, percn, tileno3, pplnt, sedorgn, sedorgp, surqno3, latno3,    &
+         surqsolp, sedminpa, sedminps, fertn, fertp, fixn, grazn, grazp, ipl, qp_cms, qtile,            &
+         snofall, snomlt, usle, canev, ep_day, es_day, etday, inflpcp, isep, iwgen, ls_overq,           &
+         nd_30, pet_day, precip_eff, qday, latqrunon, gwtranq, satexq, surf_bs, bss, bss_ex, brt,       &
+         gwtrann, gwtranp, satexn, satexq_chan,                                                         & !rtb gwflow
+         sanyld, silyld, clayld, sagyld, lagyld                                                          !HAK 7/11/22                                                                                  !HAK 7/27/22
       use soil_module 
       use plant_module
       use basin_module
       use organic_mineral_mass_module
-      use carbon_module
       use hydrograph_module
-      use climate_module, only : wst, w, wgn_pms, salt_atmo, cs_atmo
+      use climate_module, only : wst, w, wgn_pms
       use septic_data_module
       use reservoir_data_module
       use plant_data_module
@@ -33,50 +30,49 @@
       use conditional_module
       use constituent_mass_module
       use water_body_module
-      use salt_module !rtb salt
-      use cs_module !rtb cs
       use gwflow_module !rtb gwflow
-      !use basin_module, only : bsn_cc
       
       implicit none
 
       integer :: j                  !none          |same as ihru (hru number)
       integer :: j1                 !none          |counter (rtb)
-      integer :: ulu                !              | 
+      integer :: sb                 !              |  
+      integer :: idp                !              |
+      real :: ulu                   !              | 
       integer :: iob                !              |
       integer :: ith                !              |
       integer :: iwgn               !              |
       integer :: ires               !none          |reservoir number
       integer :: isched             !              |
-      integer :: isalt              !              |salt ion counter (rtb salt)
-      integer :: ics                !              |constituent counter (rtb cs)
+      integer :: idat               !              |
+      integer :: ihyd               !              |
+      integer :: ics                !              |
       integer :: iauto              !none          |counter
       integer :: id                 !              |
       integer :: jj                 !              |
       integer :: ly                 !none          |soil layer
       integer :: ipest              !none          |sequential pesticide number
       real :: strsa_av              !              |
+      real :: runoff_m3             !              |
+      real :: bf_m3                 !              |
+      real :: peakrbf               !              |
       integer :: icn                !              |
       real :: xx                    !              |
       integer :: iob_out            !              |object type out 
       integer :: iout               !none          |counter
       integer :: iac
-      integer :: npl_gro            !              |number of plants currently growing
+      integer :: npl_gro            !           |number of plants currently growing
+      real :: over_flow             !              |
       real :: dep                   !              |
       real :: strsw_av
       real :: strsn_av
       real :: strsp_av
-      real :: strss_av              !none (rtb salt)
       real :: strstmp_av
       real :: wet_outflow           !mm             |outflow from wetland
-      real  :: tile_fr_surf         !m3             |fraction of tile flow that is overland
       integer :: ifrt
-      integer :: idp
       real :: sw_volume_begin
       real :: soil_prof_labp
-      real :: sum_conc,sum_mass,sum_sorb !rtb salt
-      real :: saltcon,qsurf,sedppm !Jeong 2024
-     
+      real :: saltcon
       
       j = ihru
       
@@ -102,23 +98,18 @@
       !! adjust precip and temperature for elevation using lapse rates
       if (bsn_cc%lapse == 1) then
         w%precip = w%precip + ob(iob)%plaps
-        w%precip = max (0., w%precip)
+        w%precip = amax1 (0., w%precip)
         w%tmax = w%tmax + ob(iob)%tlaps
         w%tmin = w%tmin + ob(iob)%tlaps
         w%tave = w%tave + ob(iob)%tlaps
       end if
       precip_eff = w%precip
       
-      hsc_d(j) = hscz
-      hrc_d(j) = hrcz
-      hpc_d(j) = hpcz
-      hscf_d(j) = hscfz
       hru(j)%water_seep = 0.
       irrig(j)%demand = 0.
       hnb_d(j)%nuptake = 0.
       hnb_d(j)%puptake = 0.
       hwb_d(j)%wet_out = 0.
-      hnb_d(j)%denit = 0.
 
       if (bsn_cc%cswat == 2) then
         if (tillage_switch(ihru) .eq. 1) then
@@ -136,8 +127,7 @@
       !! zero pesticide balance variables
       if (cs_db%num_pests > 0) then
         do ipest = 1, cs_db%num_pests
-          !! zero all variables except pest in soil and in/on plant
-          hpestb_d(j)%pest(ipest) = hpestb_d(j)%pest(ipest) * 0.
+          hpestb_d(j)%pest(ipest) = pestbz
         end do
       end if
         
@@ -150,6 +140,17 @@
         ht1 = hz
         ht2 = hz
 
+        !! check irrigation demand decision table for water allocation
+        if (hru(j)%irr_dmd_dtbl > 0) then
+          id = hru(j)%irr_dmd_dtbl
+          jj = j
+          d_tbl => dtbl_lum(id)
+          !! iauto points to pcom(j)%dtbl(iauto) for days between operation
+          iauto = hru(j)%irr_dmd_iauto
+          call conditions (jj, iauto)
+          call actions (jj, iob, iauto)
+        end if
+        
         !! check auto operations
         if (sched(isched)%num_autos > 0) then
           do iauto = 1, sched(isched)%num_autos
@@ -163,7 +164,7 @@
             if (pcom(ihru)%fert_fut_num > 0) then
               do ifrt = 1, pcom(ihru)%fert_fut_num
                 if (pcom(ihru)%fert_fut(ifrt)%day_fert == time%day) then
-                  call pl_fert (pcom(ihru)%fert_fut(ifrt)%fertnum,                       &
+                  call pl_fert (ihru, pcom(ihru)%fert_fut(ifrt)%fertnum,                       &
                       pcom(ihru)%fert_fut(ifrt)%fert_kg, pcom(ihru)%fert_fut(ifrt)%appnum)
                   pcom(ihru)%fert_fut(ifrt)%day_fert = 0
                 end if
@@ -180,6 +181,9 @@
           if (time%end_yr == 1) then
             pcom(j)%rot_yr = pcom(j)%rot_yr + 1
           end if
+          !! increment days since last plant and harvest
+          if (pcom(j)%days_plant > 0) pcom(j)%days_plant = pcom(j)%days_plant + 1
+          if (pcom(j)%days_harv > 0) pcom(j)%days_harv = pcom(j)%days_harv + 1
           do iauto = 1, sched(isched)%num_autos
             id = sched(isched)%num_db(iauto)
             do iac = 1, dtbl_lum(id)%acts
@@ -190,11 +194,6 @@
           end do
         end if
         
-        !! increment days since last plant and harvest
-        pcom(j)%days_plant = pcom(j)%days_plant + 1
-        pcom(j)%days_harv = pcom(j)%days_harv + 1
-        pcom(j)%days_irr = pcom(j)%days_irr + 1
-          
         !! update base zero total heat units
         if (w%tave > 0. .and. wgn_pms(iwgn)%phutot > 0.01) then
            phubase(j) = phubase(j) + w%tave / wgn_pms(iwgn)%phutot
@@ -207,23 +206,11 @@
           pcom(j)%plstr(ipl)%strsn = 1.
           pcom(j)%plstr(ipl)%strsp = 1.
           pcom(j)%plstr(ipl)%strsa = 1.
-          pcom(j)%plstr(ipl)%strss = 1.
         end do
 
         !! calculate albedo for day
         call albedo
 
-        !rtb salt - calculate salt ion concentrations using salt equilibrium chemistry
-        if (cs_db%num_salts > 0) then
-          call salt_chem_hru
-				endif
-        
-        !rtb cs - calculate change in constituent concentrations due to chemical reactions and sorption
-        if (cs_db%num_cs > 0) then
-          call cs_rctn_hru
-          call cs_sorb_hru
-        endif
-        
         !! calculate soil temperature for soil layers
         call stmp_solt
         
@@ -233,17 +220,15 @@
         !! compute snow melt
         call sq_snom
                   
-        !!route overland flow across hru - add tile flow if not subirrigation or saturated buffer
-        tile_fr_surf = 1.   !assume all tile goes overland until get saturated buffer dtbl
+        !!route overland flow across hru
         if (ob(icmd)%hin_sur%flo > 1.e-6) then
           !!route incoming surface runoff
           if (ires > 0) then
-            !! add surface runon to wetland
-            ht1 = ob(icmd)%hin_sur + tile_fr_surf * ob(icmd)%hin_til
-            wet(j) = wet(j) + ht1
+            !! add surface runon to wetland but not to a paddy field
+            if (wet_dat_c(ires)%hyd.ne.'paddy') wet(j) = wet(j) + ob(icmd)%hin_sur
           else
             !! route across hru - infiltrate and deposit sediment
-            call rls_routesurf (icmd, tile_fr_surf)
+            call rls_routesurf (icmd)
           end if
         end if
         
@@ -254,8 +239,8 @@
         end if
           
         !!add tile flow to tile (subirrigation and saturated buffer)
-        if (ob(icmd)%hin_til%flo > 1.e-6 .and. tile_fr_surf > 1.e-6) then
-          call rls_routetile (icmd, tile_fr_surf)
+        if (ob(icmd)%hin_til%flo > 1.e-6) then
+          call rls_routetile (icmd)
         end if
         
         !!add aquifer flow to bottom soil layer and redistribute upwards
@@ -281,7 +266,6 @@
           !! if wetland - no runoff or sediment yield - all constituents
           !! transported in surface runoff and sediment will be zero
           surfq(j) = 0.
-          irrig(j)%runoff = 0.
           sedyld(j) = 0.
         end if
 
@@ -297,12 +281,10 @@
         endif
         
         !! wetland/paddy processes
-        ht2 = hz
-        wet_outflow = 0.
         if (ires > 0) then
           call wetland_control
         else
-          ht2%flo = ht2%flo + wet(j)%flo 
+          ht2%flo = wet(j)%flo * hru(j)%area_ha * 10.
           wet(j)%flo = 0.
         end if
  
@@ -317,15 +299,15 @@
         inflpcp = Max(0., inflpcp)
          
         !! add irrigation to subdaily effective precip
-        if (time%step > 1) then
+        if (time%step > 0) then
           w%ts(:) = w%ts(:) + irrig(j)%applied / time%step
         end if
         
         !! perform soil water routing
         call swr_percmain
-        
+
         !rtb gwflow: calculate saturation excess reaching the main channel for the current day (qexcess)
-        bss_ex(1,j) = bss_ex(1,j) + satexq(j)
+	      bss_ex(1,j) = bss_ex(1,j) + satexq(j)
         satexq_chan = bss_ex(1,j) * brt(j)
         bss_ex(1,j) = bss_ex(1,j) - satexq_chan
 
@@ -357,13 +339,8 @@
 	      call cbn_zhang2
 	    end if
 
-        call nut_nitvol
-
-	    if (bsn_cc%sol_P_model == 1) then  
-          call nut_pminrl2
-        else
-          call nut_pminrl
-        end if
+        call nut_nitvol  
+        call nut_pminrl
         
         !! compute biozone processes in septic HRUs
         !! if 1) current is septic hru and 2) soil temperature is above zero
@@ -375,37 +352,14 @@
         !! compute plant community partitions
         call pl_community
 
-        !! check irrigation demand decision table for water allocation (after adding irrigation)
-        if (hru(j)%irr_dmd_dtbl > 0) then
-          id = hru(j)%irr_dmd_dtbl
-          jj = j
-          d_tbl => dtbl_lum(id)
-          !! iauto points to pcom(j)%dtbl(iauto) for days between operation
-          iauto = hru(j)%irr_dmd_iauto
-          call conditions (jj, iauto)
-          call actions (jj, iob, iauto)
-        end if
-
         soil_prof_labp = 0.
         do ly = 1, soil(j)%nly
           soil_prof_labp = soil_prof_labp + soil1(j)%mp(ly)%lab
         end do
         
-        !! check monsoon season for tropical plants
-        do ipl = 1, pcom(j)%npl
-          if (pcom(j)%plcur(ipl)%mseas == "y") then
-            idp = pcom(j)%plcur(ipl)%idplt
-            if (pldb(idp)%trig == "moisture_gro") then
-              if (wgn_pms(iwgn)%p_pet_rto > 0.5) then
-                pcom(j)%plcur(ipl)%phuacc = 0.
-                pcom(j)%plcur(ipl)%gro = "y" 
-                pcom(j)%plcur(ipl)%idorm = "n"
-                pcom(j)%plcur(ipl)%mseas = "n"
-              end if
-            end if
-          end if
-        end do
-        
+        !if (pl_mass(j)%stem(1)%n < 0.) then
+        !    soil1(j)%mn(1)%no3 = 0.
+        !end if
         !! compute plant biomass, leaf, root and seed growth
         call pl_grow
 
@@ -419,7 +373,6 @@
         
         !! compute total parms for all plants in the community
         strsw_av = 0.; strsa_av = 0.; strsn_av = 0.; strsp_av = 0.; strstmp_av = 0.
-        strss_av = 0.
         npl_gro = 0
         do ipl = 1, pcom(j)%npl
           if (pcom(j)%plcur(ipl)%gro == 'y' .and. pcom(j)%plcur(ipl)%idorm == 'n'       &
@@ -429,7 +382,6 @@
             strsa_av = strsa_av + (1. - pcom(j)%plstr(ipl)%strsa)
             strsn_av = strsn_av + (1. - pcom(j)%plstr(ipl)%strsn)
             strsp_av = strsp_av + (1. - pcom(j)%plstr(ipl)%strsp)
-            strss_av = strss_av + (1. - pcom(j)%plstr(ipl)%strss)
             strstmp_av = strstmp_av + (1. - pcom(j)%plstr(ipl)%strst)
           end if
         end do
@@ -469,15 +421,13 @@
         es_day = es_day
 
         !rtb gwflow
-        if(bsn_cc%gwflow.eq.1) then
+        if(gwflow_flag.eq.1) then
           etremain(j) = pet_day - etday
+          etactual(j) = etday
         endif
  
         !! compute pesticide washoff   
         if (w%precip >= 2.54) call pest_washp
-        
-        !! compute pesticide uptake
-        call pest_pl_up
 
         !! compute pesticide degradation
         call pest_decay
@@ -517,48 +467,26 @@
 
         !! compute nitrate movement leaching
         call nut_nlch
-
         if(wet(j)%flo>0.001) then
           saltcon = wet(j)%salt/wet(j)%flo*1000 !mg/l
         else
           saltcon = 0
         endif
         
+        !if (wet_dat_c(ires)%hyd.eq.'paddy'.and.ires > 0.and.time%yrs > pco%nyskip.and.bsn_cc%uhyd==1) then
         if (ires > 0) then
-          if (wet(j)%flo>0) then
-            sedppm=wet(j)%sed/wet(j)%flo*1000000.
-          else
-            sedppm=0.
-          end if
-
-          ! if (wet_dat_c(ires)%hyd.eq.'paddy' .and. j.eq.2899) then !.and.time%yrs > pco%nyskip) then  !spark, temp
-          if (wet_dat_c(ires)%hyd.eq.'paddy') then !.and.time%yrs > pco%nyskip) then
-           write(100100,'(4(I6,","),20(f20.3,","))') time%yrc,time%mo,time%day_mo,j,w%precip,irrig(j)%applied,hru(j)%water_seep,     &
-            pet_day,etday,wet_ob(j)%weir_hgt*1000,wet_ob(j)%depth*1000.,ht2%flo/(hru(j)%area_ha*10.),soil(j)%sw,sedppm,ht2%sed*1000, &
-            wet(j)%no3,ht2%no3,pcom(j)%lai_sum,saltcon, phubase(j), pcom(j)%plcur(1)%phuacc
-          end if
-        end if
-
+        if (wet_dat_c(ires)%hyd.eq.'paddy') then
+          write(100100,'(4(I6,","),20(f20.1,","))') time%yrc,time%mo,time%day_mo,j,w%precip,irrig(j)%applied,hru(j)%water_seep,&
+          pet_day,etday,wet_ob(j)%weir_hgt*1000,wet_ob(j)%depth*1000.,ht2%flo/(hru(j)%area_ha*10.),soil(j)%sw,wet(j)%sed,ht2%sed*1000,wet(j)%no3,ht2%no3,&
+          pcom(j)%lai_sum,saltcon 
+        endif
+        endif
         !! compute phosphorus movement
         call nut_solp
 
-        !rtb salt
-        if (cs_db%num_salts > 0) then
-          if(salt_atmo == "y") then
-            call salt_rain !add salt in atmospheric deposition to soil profile
-          endif
-          call salt_roadsalt !add salt in applied road salt to soil profile
-          call salt_lch ! compute salt leaching
-        endif
-        
-        !rtb cs
-        if (cs_db%num_cs > 0) then
-          if(cs_atmo == "y") then
-            call cs_rain
-          endif
-          call cs_lch
-        endif
-        
+        !! compute chl-a, CBOD and dissolved oxygen loadings
+        call swr_subwq
+
         !! compute pathogen transport
         if (cs_db%num_paths > 0.) then
           call path_ls_swrouting
@@ -568,11 +496,11 @@
 
         !! compute loadings from urban areas
         if (hru(j)%luse%urb_lu > 0) then
-	      if (time%step == 1) then
-            call hru_urban ! daily simulation
-	      else
-            call hru_urbanhr ! subdaily simulation J.Jeong 4/20/2009
-	      endif
+	     if(time%step == 0) then
+	        call hru_urban ! daily simulation
+	     else
+		     call hru_urbanhr ! subdaily simulation J.Jeong 4/20/2009
+	     endif
 	    endif	  
 
         !! compute sediment loading in lateral flow and add to sedyld
@@ -600,25 +528,20 @@
           call smp_bmpfixed
         end if
 
+        !! compute water yield for HRU
+        qdr(j) = qday + latq(j) + qtile
+        
         !! ht2%flo is outflow from wetland or total saturation excess if no wetland
+
         if(ht2%flo > 0.) then
           wet_outflow = ht2%flo / hru(j)%area_ha / 10.   !! mm = m3/ha *ha/10000m2 *1000mm/m
           qday = qday + wet_outflow
           qdr(j) = qdr(j) + wet_outflow
+          !surfq(j) = surfq(j) + wet_outflow
           ht2%flo = 0.
         end if
-        
-        !! calculate amount of surface runoff during day (qday) and store the remainder
-        call sq_surfst
-        !qday =  surfq(j)
-
-        !! compute water yield for HRU
-        qdr(j) = qday + latq(j) + qtile
 
         if (qdr(j) < 0.) qdr(j) = 0.
-
-        !! compute chl-a, CBOD and dissolved oxygen loadings
-        call swr_subwq
 
         xx = sed_con(j) + soln_con(j) + solp_con(j) + orgn_con(j) + orgp_con(j)
         if (xx > 1.e-6) then
@@ -638,8 +561,6 @@
       if (ob(iob)%ru_tot > 0) then
         iob_out = sp_ob1%ru + ob(iob)%ru(1) - 1
       end if
-      qsurf=surfq(j)
-      
       hwb_d(j)%surq_cha = 0.
       hwb_d(j)%latq_cha = 0.
       hwb_d(j)%surq_res = 0.
@@ -710,13 +631,7 @@
         hwb_d(j)%ecanopy = canev
         hwb_d(j)%eplant = ep_day
         hwb_d(j)%esoil = es_day + hru(j)%water_evap 
-        hwb_d(j)%wet_evap = hru(j)%water_evap 
-        hwb_d(j)%wet_out = wet_outflow
-        hwb_d(j)%wet_stor = wet(j)%flo / (10. * hru(j)%area_ha)
         hwb_d(j)%surq_cont = surfq(j)
-        if (j==1 .and. surfq(j) > 1.) then
-          icn = 0
-        end if
         hwb_d(j)%cn = cnday(j)
         hwb_d(j)%sw = soil(j)%sw
         hwb_d(j)%sw_final = soil(j)%sw
@@ -726,13 +641,13 @@
         hwb_d(j)%qtile = qtile
         hwb_d(j)%irr = irrig(j)%applied
         irrig(j)%applied = 0.
-        irrig(j)%runoff = 0.
+        irrig(j)%no3 = 0.
+        irrig(j)%salt = 0.
         hwb_d(j)%surq_runon = ls_overq
-        hwb_d(j)%latq_runon = latqrunon 
-        hwb_d(j)%overbank = hru(j)%wet_obank_in
-        hru(j)%wet_obank_in = 0.
+        hwb_d(j)%latq_runon = latqrunon !/ (10. * hru(j)%area_ha) 
+        ! hwb_d(j)%overbank = over_flow     !overbank is not added yet
 
-        hwb_d(j)%gwsoil = gwsoilq(j) !rtb gwflow - groundwater transferred to soil profile
+        hwb_d(j)%gwtran = gwtranq(j) !rtb gwflow - groundwater transferred to soil profile
         if (ires<1) hwb_d(j)%satex = satexq(j) !rtb gwflow - saturation excess generated from high water table
         hwb_d(j)%satex_chan = satexq_chan !rtb gwflow - saturation excess generated from high water table
         hwb_d(j)%delsw = soil(j)%sw - sw_volume_begin
@@ -748,62 +663,9 @@
         hnb_d(j)%fertn = fertn
         hnb_d(j)%fertp = fertp
         hnb_d(j)%fixn = fixn
-        hnb_d(j)%gwsoiln = gwsoiln(j) !rtb gwflow
-        hnb_d(j)%gwsoilp = gwsoilp(j) !rtb gwflow
+        hnb_d(j)%gwtrann = gwtrann(j) !rtb gwflow
+        hnb_d(j)%gwtranp = gwtranp(j) !rtb gwflow
 
-      ! rtb salt - output salt balance
-        do isalt=1,cs_db%num_salts
-          hsaltb_d(j)%salt(isalt)%surq = surqsalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%latq = latqsalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%urbq = urbqsalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%wetq = wetqsalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%wtsp = wtspsalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%tile = tilesalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%perc = percsalt(j,isalt)
-          hsaltb_d(j)%salt(isalt)%gwup = gwupsalt(j,isalt)
-          sum_conc = 0.
-          sum_mass = 0.
-          do jj=1,soil(j)%nly !loop through soil layers
-            sum_conc = sum_conc + cs_soil(j)%ly(jj)%saltc(isalt) !mg/L
-            sum_mass = sum_mass + cs_soil(j)%ly(jj)%salt(isalt) !kg/ha
-          enddo
-          hsaltb_d(j)%salt(isalt)%conc = sum_conc / soil(j)%nly !mg/L (average)
-          hsaltb_d(j)%salt(isalt)%soil = sum_mass !kg/ha (total salt in soil profile)
-        enddo
-
-      ! rtb cs - output constituent balance
-        do ics=1,cs_db%num_cs
-          sum_conc = 0.
-          sum_mass = 0.
-          sum_sorb = 0.
-          do jj=1,soil(j)%nly !loop through soil layers
-            sum_conc = sum_conc + cs_soil(j)%ly(jj)%csc(ics) !mg/L
-            sum_mass = sum_mass + cs_soil(j)%ly(jj)%cs(ics) !kg/ha
-            sum_sorb = sum_sorb + cs_soil(j)%ly(jj)%cs_sorb(ics) !kg/ha
-          enddo
-          hcsb_d(j)%cs(ics)%conc = sum_conc / soil(j)%nly !mg/L (average)
-          hcsb_d(j)%cs(ics)%soil = sum_mass !kg/ha (total constituent mass in soil water)
-          hcsb_d(j)%cs(ics)%srbd = sum_sorb !kg/ha (total constituent mass sorbed to soil)
-          hcsb_d(j)%cs(ics)%surq = surqcs(j,ics)
-          hcsb_d(j)%cs(ics)%sedm = sedmcs(j,ics)
-          hcsb_d(j)%cs(ics)%latq = latqcs(j,ics)
-          hcsb_d(j)%cs(ics)%urbq = urbqcs(j,ics)
-          hcsb_d(j)%cs(ics)%wetq = wetqcs(j,ics)
-          hcsb_d(j)%cs(ics)%wtsp = wtspcs(j,ics)
-          hcsb_d(j)%cs(ics)%tile = tilecs(j,ics)
-          hcsb_d(j)%cs(ics)%perc = perccs(j,ics)
-          hcsb_d(j)%cs(ics)%gwup = gwupcs(j,ics)
-          !hcsb_d(j)%cs(ics)%irsw (populated in cs_irrig)
-          !hcsb_d(j)%cs(ics)%irgw (populated in cs_irrig)
-          !hcsb_d(j)%cs(ics)%irwo (populated in cs_irrig)
-          !hcsb_d(j)%cs(ics)%rain (populated in cs_rain)
-          !hcsb_d(j)%cs(ics)%dryd (populated in cs_rain)
-          !hcsb_d(j)%cs(ics)%fert (populated in cs_fert)
-          !hcsb_d(j)%cs(ics)%uptk (populated in cs_uptake)
-          !hcsb_d(j)%cs(ics)%rctn (populated in cs_rctn_hru)
-          !hcsb_d(j)%cs(ics)%sorb (populated in cs_sorb_hru)
-        enddo  
-        
       ! output_plantweather
         hpw_d(j)%lai = pcom(j)%lai_sum
         hpw_d(j)%bioms = pl_mass(j)%tot_com%m
@@ -816,12 +678,11 @@
         hpw_d(j)%strstmp = strstmp_av
         hpw_d(j)%strsn = strsn_av      
         hpw_d(j)%strsp = strsp_av
-        hpw_d(j)%strss = strss_av
         hpw_d(j)%nplnt = pl_mass(j)%tot_com%n
         hpw_d(j)%percn = percn(j)
         !rtb gwflow: store nitrate leaching concentration for gwflow module
-        if(bsn_cc%gwflow == 1  .and. gw_solute_flag == 1) then
-          gwflow_percsol(j,1) = percn(j)
+        if(gwflow_flag .and. gw_transport_flag) then
+          gwflow_percn(j) = percn(j)
         endif
         hpw_d(j)%pplnt = pl_mass(j)%tot_com%p
         hpw_d(j)%tmx = w%tmax
@@ -845,8 +706,6 @@
 
       !! set hydrographs for direct routing or landscape unit
       call hru_hyds
-      
-!100   format (4i6,2i8,2x,a,40f12.3)
  
       return
       end subroutine hru_control

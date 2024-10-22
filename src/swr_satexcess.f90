@@ -1,4 +1,4 @@
-      subroutine swr_satexcess
+      subroutine swr_satexcess(j1)
       
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!    this subroutine moves water to upper layers if saturated and can't perc
@@ -14,22 +14,23 @@
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
-      use hru_module, only : hru, ihru, surfq, satexq  !rtb gwflow
+      use hru_module, only : hru, ihru, cbodu, surfq, surqno3, surqsolp, sep_tsincefail, i_sep,  &
+        isep, qday, sepday, satexq  !rtb gwflow
       use soil_module
       use hydrograph_module
       use basin_module
       use organic_mineral_mass_module
-      use gwflow_module, only : gw_soil_flag !rtb gwflow
+      use gwflow_module, only : gw_transfer_flag !rtb gwflow
       use reservoir_module
       
       implicit none
 
       integer :: j                 !none          |HRU number
+      integer :: j1                !none          |counter
       real:: ul_excess             !              |
       real :: rto                  !              |
       integer :: nn                !none          |number of soil layers
       integer :: ly                !none          |counter
-      integer :: ly1               !none          |counter
       integer :: ires                !none          |counter
 
       j = ihru
@@ -52,40 +53,26 @@
           ul_excess = soil(j)%phys(1)%st - soil(j)%phys(1)%ul
           if (ul_excess > 0.) then
             soil(j)%phys(1)%st = soil(j)%phys(1)%ul
-            !! check if entire profile is saturated - could get excess in first layer if irrigating on frozen soil
-            do ly1 = 2, nn
-              soil(j)%phys(ly1)%st = soil(j)%phys(ly1)%st + ul_excess
-              if (soil(j)%phys(ly1)%st > soil(j)%phys(ly1)%ul) then
-                ul_excess = soil(j)%phys(ly1)%st - soil(j)%phys(ly1)%ul
-                soil(j)%phys(ly1)%st = soil(j)%phys(ly1)%ul
-              else
-                ul_excess = 0.
-                exit
-              end if
-            end do
-          end if
-          !! if still saturated
-          if (ul_excess > 0.) then
             !! if depressional storage, add to ponded water 
             !! if no depressional storage, add to surface runoff
             if (ires == 0) then
               surfq(j) = surfq(j) + ul_excess
               !! rtb gwflow: add ul_excess to runoff storage
-              if(gw_soil_flag.eq.1) then                                             !!!!!!  Ryan please check; 
+              if(gw_transfer_flag.eq.1) then
                 satexq(j) = satexq(j) + ul_excess !saturation excess (mm) leaving HRU soil profile on current day
               end if
             else
               !! move water and nutrient upward and add to wetland storage Jaehak 2022
               !! this is not actual upward movement of water and nutrient, but a process computationally 
               !! rebalancing water and mass balance in the soil profile
-              wet(j)%flo = wet(j)%flo + ul_excess * 10. * hru(ihru)%area_ha   !m3=mm*10*ha)
+              wet(j)%flo = wet(j)%flo + ul_excess * 10. * hru(j)%area_ha   !m3=mm*10*ha)
               wet_ob(j)%depth = wet(j)%flo / hru(j)%area_ha / 10000. !m
               
               !! add ratio of nutrients to be reallocated to ponding water
               if (hru(j)%water_seep > 1.e-6) then
                 rto = ul_excess / hru(j)%water_seep           
                 rto = amin1 (1., rto)
-                hru(j)%water_seep = rto * hru(j)%water_seep     !updated infiltration volume of the standing water
+                hru(j)%water_seep = (1.-rto) * hru(j)%water_seep     !updated infiltration volume of the standing water
                 !! substract the fraction of nutrient in the top soil layer
                 soil1(j)%mn(1)%no3 = soil1(j)%mn(1)%no3 - wet_seep_day(j)%no3 * rto / hru(j)%area_ha !kg/ha
                 soil1(j)%mn(1)%nh4 = soil1(j)%mn(1)%nh4 - wet_seep_day(j)%nh3 * rto / hru(j)%area_ha !kg/ha

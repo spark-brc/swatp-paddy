@@ -28,7 +28,7 @@
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
         use hru_module, only : hru, sedyld, sedorgp, sedminpa, sedminps, ihru, enratio,  &
-          ihru 
+          ihru, ipl 
         use soil_module
         use plant_module
         use organic_mineral_mass_module
@@ -36,6 +36,7 @@
         implicit none       
 
         integer :: j                !none           |HRU number
+        integer :: sb               !none           |subbasin number
         real :: sedp_attach         !kg P/ha        |amount of phosphorus attached to sediment 
                                     !               |in soil
         real :: wt1                 !kg/ha          |weight of upper soil layer

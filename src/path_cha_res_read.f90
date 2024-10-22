@@ -7,15 +7,12 @@
       use hydrograph_module
       use sd_channel_module
       use organic_mineral_mass_module
-
-      implicit none
  
       character (len=80) :: titldum
       character (len=80) :: header
       integer :: ipathi
       integer :: eof, imax
       logical :: i_exist              !none       |check to determine if file exists
-      integer :: ipath
 
       eof = 0
       
@@ -59,7 +56,9 @@
             if (eof < 0) exit
             read (107,*,iostat=eof) path_init_name(ipathi)
             if (eof < 0) exit
-            read (107,*,iostat=eof) titldum, path_water_ini(ipathi)%water, path_water_ini(ipathi)%benthic
+            read (107,*,iostat=eof) titldum, path_water_ini(ipathi)%water
+            if (eof < 0) exit
+            read (107,*,iostat=eof) titldum, path_water_ini(ipathi)%benthic
             if (eof < 0) exit
           end do
           close (107)

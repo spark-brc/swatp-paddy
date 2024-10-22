@@ -24,6 +24,8 @@
       integer, intent (in)  :: ob_cur         !          |
       integer, intent (in)  :: idtbl          !none      |
       integer :: ob_num                       !          |object number   
+      integer :: nbz = 748932582              !          |
+      integer, dimension(1) :: seed = (/3/)   !          |
       integer :: ic                           !none      |counter
       integer :: ialt                         !none      |counter
       integer :: iac                          !none      |counter
@@ -228,7 +230,7 @@
           
           ivar_cur = pcom(ob_num)%days_plant
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
                                    
         !days since last harvest
         case ("days_harv")
@@ -237,16 +239,7 @@
           
           ivar_cur = pcom(ob_num)%days_harv
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
-                                         
-        !days since last irrigation
-        case ("days_irr")
-          ob_num = d_tbl%cond(ic)%ob_num
-          if (ob_num == 0) ob_num = ob_cur
-          
-          ivar_cur = pcom(ob_num)%days_irr
-          ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
                                          
         !days since last action
         case ("days_act")
@@ -256,13 +249,13 @@
           iac = d_tbl%con_act(ic)
           ivar_cur = pcom(ob_num)%dtbl(idtbl)%days_act(iac)
           ivar_tbl = int(d_tbl%cond(ic)%lim_const) + 2
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
           
         !days since first simulation day of year
         case ("day_start")
           ivar_cur = time%day_start 
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
                                            
         !slope
         case ("slope")
@@ -305,13 +298,14 @@
         case ("jday")
           ivar_cur = time%day 
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
 
         !month
         case ("month")
-          ivar_cur = time%mo 
-          ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          ivar_cur = time%mo
+          var_cur = ivar_cur + float (time%day_mo) / float (ndays_noleap(ivar_cur+1)    &
+                                                                  - ndays_noleap(ivar_cur))
+          call cond_real (ic, var_cur, d_tbl%cond(ic)%lim_const, idtbl)
           
         !rotation year
         case ("year_rot")
@@ -320,7 +314,7 @@
           
           ivar_cur = pcom(ob_num)%rot_yr 
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
 
         !growth year of perennials
         case ("year_gro")
@@ -329,19 +323,19 @@
           
           ivar_cur = pcom(ob_num)%plcur(1)%curyr_mat
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
                        
         !calendar year
         case ("year_cal")
           ivar_cur = time%yrc
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
           
         !sequential year of simulation
         case ("year_seq")
           ivar_cur = time%yrs
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
                   
         !current years of maturity for perennial plants
         case ("cur_yrs_mat")
@@ -350,7 +344,7 @@
           
           ivar_cur = pcom(ob_num)%plcur(1)%curyr_mat
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
                        
         !above ground biomass
         case ("biomass")
@@ -741,16 +735,6 @@
           !check alternatives
           call cond_real (ic, res(ires)%flo, targ, idtbl)
                
-        !reservoir inflow: JK added 28/02/2023
-        case ("res_inflo")
-          !determine target variable
-          ob_num = d_tbl%cond(ic)%ob_num
-          if (ob_num == 0) ob_num = ob_cur
-          iob = sp_ob1%res + ob_num - 1
-          flo_m3 = ob(iob)%hin%flo / 86400. 
-          call cond_real (ic, flo_m3, d_tbl%cond(ic)%lim_const, idtbl)         
-          
-            
         !impounded water depth -paddy average water depth of water
         case ("wet_depth")
           !determine target variable

@@ -4,35 +4,27 @@
       use hydrograph_module
       use maximum_data_module
       use calibration_data_module
-      use hru_module
 
       implicit none
       
       integer :: date_time(8)           !              |
       character*10 b(3)                 !              |
-      integer :: iob
-      integer, allocatable, dimension(:) :: cmd_next
     
-      prog = " SWAT+ Aug 27 2024        MODULAR Rev 2024.61.0.1"
+      prog = " SWAT+ Apr 12 2023       MODULAR Rev 2023.60.5.6"
 
       write (*,1000)
       open (9003,file='simulation.out')
       write (9003,1000)
  1000 format(1x,"                  SWAT+               ",/,             &
-     &          "            Revision 61.0.1           ",/,             &
+     &          "             Revision 60.5.6          ",/,             &
      &          "      Soil & Water Assessment Tool    ",/,             &
      &          "               PC Version             ",/,             &
      &          "    Program reading . . . executing",/)
       
-      open (888,file="erosion.txt",recl = 1500)
-      
- !!!! for Luis only
- !     open (7777,file='res1_out.txt',recl=1500)
- !     write (7777,7778) 
-!7778  format (9x,'DAY',8x,'YEAR',10x,'RES',7x,'VOL m^3',4x,'INFLO m^3',5x,'OUTFLO m^3',5x,'PREC m^3',7x,'EVAP m^3',  &
-!        8x,'AREA ha')
- !!!! for Luis only
-      
+      !open (888,file="erosion.txt",recl = 1500)
+      !open(100100,file="paddy_test.csv") !temporary output for paddy Jaehak 2022 
+      !write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT" 
+
       call proc_bsn   
       call proc_date_time
       call proc_db
@@ -42,29 +34,13 @@
       call exco_db_read
       call dr_db_read
       
-      allocate (cmd_next(sp_ob%objs))
-      icmd = sp_ob1%objs
-      iob = 0
-        do while (icmd /= 0)
-            iob = iob + 1
-          cmd_next(iob) = icmd
-          write (7777,*) icmd, ob(icmd)%name, ob(icmd)%typ,               &  
-           ob(icmd)%props, ob(icmd)%props2, ob(icmd)%src_tot,           &
-           ob(icmd)%rcv_tot !, (ob(icmd)%obj_out,ob(icmd)%obtyp_out(i),   &
-           !ob(icmd)%obtypno_out(i), ob(icmd)%htyp_out(i), i = 1,        &
-           !ob(icmd)%src_tot)
-         
-         icmd = ob(icmd)%cmd_next
-        end do 
-          
       call cli_lapse
       call object_read_output
 
       call om_water_init
       call pest_cha_res_read
       call path_cha_res_read
-      call salt_cha_read !rtb salt
-      call cs_cha_read !rtb cs
+      call salt_cha_res_read
 
       call lsu_read_elements        !defining landscape units by hru
 
@@ -89,32 +65,24 @@
       call manure_allocation_read
       
       call dtbl_flocon_read
+      call water_allocation_read
+      call hru_dtbl_actions_init
             
       ! read water treatment and water allocation files - before hru lum tables
       call treat_read_om
-      call water_allocation_read
-      
-      call hru_dtbl_actions_init
+      !call water_allocation_read
       
       ! read reservoir and wetland data
       call proc_res
       call wet_read_hyd
       call wet_read
-      call wet_read_salt_cs
       if (db_mx%wet_dat > 0) call wet_all_initial
-      call wet_fp_init
-      
-      !! initialize carbon and nutrient contents for each hru
-      do ihru = 1, sp_ob%hru
-        isol = hru(ihru)%dbs%soil
-        call soil_nutcarb_init(isol)
-      end do
+      if (bsn_cc%i_fpwet == 2) call wet_fp_init
       
       call proc_cal
       
       call proc_open
       
-        
       ! compute unit hydrograph parameters for subdaily runoff
       call unit_hyd_ru_hru
 
@@ -124,11 +92,11 @@
       
       ! save initial time settings for soft calibration runs
       time_init = time
-
       if (bsn_cc%uhyd==1)then
-      open(100100,file="paddy_daily.csv") !temporary output for paddy Jaehak 2022 
-      write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT,","PhuBase0,","PhuMat," 
+      open(100100,file="paddy_test.csv") !temporary output for paddy Jaehak 2022 
+      write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT" 
       end if
+
       !! simulate watershed processes
       if (time%step < 0) then
         !! export coefficient - average annual

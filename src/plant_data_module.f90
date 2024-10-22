@@ -40,9 +40,9 @@
         real :: pltnfr1 = 0.006          !kg N/kg biomass   |nitrogen uptake parm #1
         real :: pltnfr2 = 0.002          !kg N/kg biomass   |nitrogen uptake parm #2 
         real :: pltnfr3 = 0.0015         !kg N/kg/biomass   |nitrogen uptake parm #3
-        real :: pltpfr1 = 0.0007         !kg P/kg/biomass   |phoshorus uptake parm #1
-        real :: pltpfr2 = 0.0004         !kg P/kg/biomass   |phoshorus uptake parm #2
-        real :: pltpfr3 = 0.0003         !kg P/kg/biomass   |phoshorus uptake parm #3
+        real :: pltpfr1 = 0.0007         !kg P/kg/biomass   |phoshorus uprake parm #1
+        real :: pltpfr2 = 0.0004         !kg P/kg/biomass   |phoshorus uprake parm #2
+        real :: pltpfr3 = 0.0003         !kg P/kg/biomass   |phoshorus uprake parm #3
         real :: wsyf = 0.01              !(kg/ha)/(kg/ha)   |value of harvest index bet 0 and HVSTI
         real :: usle_c = 0.001           !none              |minimum value of the USLE C factor for water erosion
         real :: gsi = 0.002              !m/s               |maximum stomatal conductance
@@ -57,12 +57,12 @@
         real :: rsdco_pl = 0.05          !none              |plant residue decomposition coeff
         real :: alai_min = 0.75          !m**2/m**2         |min LAI during winter dormant period
         real :: laixco_tree = 0.3        !none              |coefficient to estimate max lai during tree growth
-        integer :: mat_yrs = 10          !years             |years to maturity  
+        integer :: mat_yrs = 10          !years             |year to maturity  
         real :: bmx_peren = 1000.        !metric tons/ha    |max biomass for forest
         real :: ext_coef = 0.65          !                  |light extinction coefficient
         real :: leaf_tov_min = 12.       !months            |perennial leaf turnover rate with minimum stress (complete turnover in 12 mon)
         real :: leaf_tov_max = 3.        !months            |perennial leaf turnover rate with maximum stress (complete turnover in 3 mon)
-        real :: bm_dieoff = 0.           !frac              |above ground biomass that dies off at dormancy
+        real :: bm_dieoff = 1.           !frac              |above ground biomass that dies off at dormancy
         !real :: leaf_frac_mx             !frac              |max fraction of above ground biomass that is leaf (assume constant over life of perennial)
         real :: rsr1 = 0.                !frac              |initial root to shoot ratio at the beg of growing season
         real :: rsr2 = 0.                !frac              |root to shoot ratio at the end of the growing season

@@ -8,7 +8,6 @@
       use basin_module
       use hru_module, only : hru
       use hydrograph_module
-      use soil_module
       
       implicit none
       
@@ -16,10 +15,15 @@
       integer :: ilum        !none      |counter
       integer :: icvmax      !          |
       integer :: nyskip      !          |
+      integer :: icond_sum   !          |
       integer :: ihru        !none      |counter
       integer :: isdh        !none      |counter
       integer :: idb         !          |   
-      integer :: iord        !none      |counter 
+      integer :: iord        !none      |counter
+      integer :: isdc        !none      |counter
+      integer :: nvar        !none      |number of plant cal variables (1=lai_pot, 2=harv_idx)
+      real :: cond1          !          |   
+      real :: cond2          !          |   
       
       nyskip = pco%nyskip
       pco = pco_init
@@ -97,6 +101,15 @@
         call calsoft_sed
       end if 
 
+	  !  do isdc = 1, sp_ob%chandeg
+	  !    idb = sd_ch(isdc)%props
+		!  write (4999,*) sd_chd(idb)%name, sd_chd(idb)%order, sd_chd(idb)%chw,          &
+      !        sd_chd(idb)%chd, sd_chd(idb)%chs, sd_chd(idb)%chl, sd_chd(idb)%chn, sd_chd(idb)%chk,              &
+      !        sd_ch(isdc)%cherod, sd_ch(isdc)%cov, sd_chd(idb)%hc_cov, sd_chd(idb)%chseq, sd_chd(idb)%d50,      &
+      !        sd_chd(idb)%clay, sd_chd(idb)%bd, sd_chd(idb)%chss, sd_chd(idb)%bedldcoef, sd_chd(idb)%tc,        &
+      !        sd_ch(isdc)%shear_bnk, sd_ch(isdc)%hc_erod, sd_chd(idb)%hc_hgt, sd_chd(idb)%hc_ini
+	  !  end do
+
       !calibrate channel sediment 
       if (cal_codes%chsed == "y") then
         call calsoft_chsed
@@ -114,9 +127,8 @@
       !! write output to hydrology-cal.hyd   
       if (cal_codes%hyd_hru /= "n") then
         write (5001,*) " hydrology-cal.hyd developed from soft data calibration"
-        !write (5001,*) " NAME LAT_TTIME LAT_SED CAN_MAX  ESCO  EPCO ORGN_ENRICH ORGP_ENRICH CN3_SWF &
-        !                                BIO_MIX PERCO LAT_ORGN LAT_ORGP PET_CO LATQ_CO NOT_USED"
-        write (5001,5010)
+        write (5001,*) " NAME LAT_TTIME LAT_SED CAN_MAX  ESCO  EPCO ORGN_ENRICH ORGP_ENRICH CN3_SWF &
+                                        BIO_MIX PERCO LAT_ORGN LAT_ORGP PET_CO LATQ_CO NOT_USED"
         do ihru = 1, sp_ob%hru
           write (5001,*) hru(ihru)%hyd
         end do
@@ -128,12 +140,8 @@
                    
         !! write perco to hydrology-cal.hyd
         write (5001,*) " hydrology-cal.hyd developed from soft data calibration"
-        !write (5001,*) " NAME LAT_TTIME LAT_SED CAN_MAX  ESCO  EPCO ORGN_ENRICH ORGP_ENRICH CN3_SWF &
-        !                                BIO_MIX PERCO LAT_ORGN LAT_ORGP PET_CO LATQ_CO NOT_USED"
-        write (5001,5010)
-5010    format (1x,'NAME',38x,'LAT_TTIME',12x,'LAT_SED',8x,'CAN_MAX',11x,'ESCO',7x,'EPCO',8x,        &
-        'ORGN_ENRICH',4x,'ORGP_ENRICH',4x,'CN3_SWF',8x,'BIO_MIX',10x,'PERCO',11x,'LAT_ORGN',7x,      &
-        'LAT_ORGP',5x,'PET_CO',8x,'LATQ_CO',7x,'NOT_USED')
+        write (5001,*) " NAME LAT_TTIME LAT_SED CAN_MAX  ESCO  EPCO ORGN_ENRICH ORGP_ENRICH CN3_SWF &
+                                        BIO_MIX PERCO LAT_ORGN LAT_ORGP PET_CO LATQ_CO NOT_USED"
         do ihru = 1, sp_ob%hru
           write (5001,*) hru(ihru)%hyd
         end do

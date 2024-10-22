@@ -5,11 +5,10 @@
 
       use basin_module
       use organic_mineral_mass_module
-      use hru_module, only : ipl
+      use hru_module, only : hru, ihru, ipl
       use soil_module
       use plant_module
       use constituent_mass_module
-      use carbon_module
       
       implicit none
    
@@ -32,9 +31,6 @@
       
       !! add above ground mass to residue pool
       rsd1(j)%tot(1) = pl_mass(j)%ab_gr(ipl) + rsd1(j)%tot(1)
-      !! add plant carbon for printing
-      hrc_d(j)%plant_c = hrc_d(j)%plant_c + pl_mass(j)%ab_gr(ipl)%c
-      hpc_d(j)%drop_c = hpc_d(j)%drop_c + pl_mass(j)%ab_gr(ipl)%c
 
       !! zero all plant mass
       pl_mass(j)%tot(ipl) = plt_mass_z
@@ -45,10 +41,8 @@
       pl_mass(j)%root(ipl) = plt_mass_z
       
       do k = 1, cs_db%num_pests
-        cs_soil(j)%ly(1)%pest(k) = cs_soil(j)%ly(1)%pest(k) + cs_pl(j)%pl_in(ipl)%pest(k)   &
-                                                             + cs_pl(j)%pl_on(ipl)%pest(k)
-        cs_pl(j)%pl_in(ipl)%pest(k) = 0.
-        cs_pl(j)%pl_on(ipl)%pest(k) = 0.
+        cs_soil(j)%ly(1)%pest(k) = cs_soil(j)%ly(1)%pest(k) !+ cs_pl(j)%pest(k)
+        cs_pl(j)%pest(k) = 0.
       end do
 
 	  !! reset plant variables

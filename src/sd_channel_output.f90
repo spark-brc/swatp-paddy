@@ -20,7 +20,8 @@
       ch_out_m(ichan) = ch_out_m(ichan) + ch_out_d(ichan)
       ch_wat_m(ichan) = ch_wat_m(ichan) + ch_wat_d(ichan)
       
-         if (pco%day_print == "y" .and. time%step > 1 .and. pco%int_day_cur == pco%int_day) then
+!!!!! subdaily print
+         if (pco%day_print == "y" .and. time%step > 0 .and. pco%int_day_cur == pco%int_day) then
           do ii = 1, time%step 
             write (2508,101)  time%day, time%mo, time%day_mo, time%yrc, ichan, ob(iob)%gis_id, ii, ob(iob)%name,  &
                      ob(iob)%hyd_flo(1,ii)

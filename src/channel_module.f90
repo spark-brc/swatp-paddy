@@ -537,5 +537,6 @@
         chn2%fp_dep = const * chn1%fp_dep
         chn2%tot_ssed = const * chn1%tot_ssed     
       end function ch_mult
+
                
       end module channel_module

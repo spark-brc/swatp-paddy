@@ -12,15 +12,19 @@
       use constituent_mass_module
       use ru_module
       use basin_module
-      use gwflow_module, only: nat_model
       
       implicit none
-
+      
+      character (len=80) :: titldum   !           |title of file
+      character (len=80) :: header    !           |header of file
+      character (len=16) :: namedum   !           |
       integer :: eof                  !           |end of file
       integer :: imax                 !none       |determine max number for array (imax) and total number in file
       character (len=3) :: iob_out    !           !object type out
       character (len=3) :: iobtyp     !none       |object type
+      character (len=3) :: ihtyp      !           |
       integer :: nspu                 !           |
+      !integer :: isp
       integer :: cmdno                !           |
       integer :: idone                !           | 
       !integer :: hydno
@@ -44,8 +48,15 @@
       integer :: ircv                 !none       |counter
       integer :: ircv_ob              !           |
       integer :: max                  !           |
-      logical :: i_exist
-    
+      integer :: ipath
+      integer :: ihmet
+      integer :: isalt
+      integer :: npests
+      integer :: npaths
+      integer :: nmetals
+      integer :: nsalts
+      
+      
       eof = 0
       imax = 0
       mexco_sp = 0
@@ -75,7 +86,6 @@
       if (sp_ob%gwflow > 0) then     ! 4==gwflow
         sp_ob1%gwflow = nspu
         nspu = sp_ob%gwflow + nspu
-        inquire(file='gwflow.huc12cell',exist=i_exist)
       end if
       if (sp_ob%aqu > 0) then         ! 5==aquifer
         sp_ob1%aqu = nspu
@@ -149,6 +159,7 @@
       if (sp_ob%chan > 0) then
         call hyd_read_connect(in_con%chan_con, "chan    ", sp_ob1%chan, sp_ob%chan, hd_tot%chan, bsn_prm%day_lag_mx) 
         call overbank_read
+        call channel_surf_link
       end if
                                   
       !read connect file for reservoirs
@@ -160,8 +171,6 @@
       if (sp_ob%recall > 0) then
         call hyd_read_connect(in_con%rec_con, "recall  ", sp_ob1%recall, sp_ob%recall, hd_tot%recall, 1) 
         call recall_read
-        call recall_read_salt !rtb salt
-        call recall_read_cs !rtb cs
       end if
                 
       !read connect file for export coefficients
@@ -187,7 +196,7 @@
       
       !read connect file for gwflow
       if (sp_ob%gwflow > 0) then
-        call gwflow_chan_read !first, read in channel cell information
+        call gwflow_riv !first, read in river cell information
         call hyd_read_connect(in_con%gwflow_con, "gwflow  ", sp_ob1%gwflow, sp_ob%gwflow, hd_tot%gwflow, 1)
         call gwflow_read
       end if
@@ -299,32 +308,22 @@
       allocate (hin_csz%pest(cs_db%num_pests))
       allocate (hin_csz%path(cs_db%num_paths))
       allocate (hin_csz%hmet(cs_db%num_metals))
-      allocate (hin_csz%salt(cs_db%num_salts)) !rtb salt
-      allocate (hin_csz%cs(cs_db%num_cs)) !rtb se 
+      allocate (hin_csz%salt(cs_db%num_salts))
           
       allocate (hcs1%pest(cs_db%num_pests))
       allocate (hcs1%path(cs_db%num_paths))
       allocate (hcs1%hmet(cs_db%num_metals))
-      allocate (hcs1%salt(cs_db%num_salts)) !rtb salt
-      allocate (hcs1%cs(cs_db%num_cs)) !rtb cs
+      allocate (hcs1%salt(cs_db%num_salts))
         
       allocate (hcs2%pest(cs_db%num_pests))
       allocate (hcs2%path(cs_db%num_paths))
       allocate (hcs2%hmet(cs_db%num_metals))
-      allocate (hcs2%salt(cs_db%num_salts)) !rtb salt
-      allocate (hcs2%cs(cs_db%num_cs)) !rtb cs
-      
-      allocate (hcs3%pest(cs_db%num_pests))
-      allocate (hcs3%path(cs_db%num_paths))
-      allocate (hcs3%hmet(cs_db%num_metals))
-      allocate (hcs3%salt(cs_db%num_salts)) !rtb salt
-      allocate (hcs3%cs(cs_db%num_cs)) !rtb cs
+      allocate (hcs2%salt(cs_db%num_salts))
 
       hin_csz%pest = 0.
       hin_csz%path = 0.
       hin_csz%hmet = 0.
-      hin_csz%salt = 0. !rtb salt
-      hin_csz%cs = 0. !rtb cs
+      hin_csz%salt = 0.
 
       !! allocate receiving arrays
       do i = 1, sp_ob%objs

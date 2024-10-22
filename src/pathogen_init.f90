@@ -26,7 +26,7 @@
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
-      use hru_module, only : hru, ihru, sol_plt_ini_cs
+      use hru_module, only : hru, hru_db, ihru, ipl, isol, mlyr, mpst, wfsh, sol_plt_ini
       use soil_module
       use plant_module
       use pathogen_data_module
@@ -34,18 +34,19 @@
       use basin_module
       use conditional_module
       use organic_mineral_mass_module
-      use hydrograph_module, only : sp_ob
+      use hydrograph_module, only : sp_ob, icmd
       use constituent_mass_module
       use output_ls_pathogen_module
       
       implicit none
 
-      integer :: mpath          !          |
-      integer :: ly             !none      |counter
-      integer :: ipath          !none      |counter
-      integer :: ipath_db       !          |
+      integer :: eof                   !          |end of file
+      character (len=80) :: titldum    !          |title of file
+      integer :: mpath                 !          |
+      integer :: ly                    !none      |counter
+      integer :: ipath                  !none      |counter
+      integer :: ipath_db               !          |
       integer :: isp_ini
-      integer :: ipl            !none      |plant number
 
       do ihru = 1, sp_ob%hru  
         !! allocate pathogens
@@ -55,16 +56,12 @@
           do ly = 1, soil(ihru)%nly
             allocate (cs_soil(ihru)%ly(ly)%path(mpath))
           end do
-          do ipl = 1, pcom(ihru)%npl
-            allocate (cs_pl(ihru)%pl_in(ipl)%path(mpath))
-            allocate (cs_pl(ihru)%pl_on(ipl)%path(mpath))
-            allocate (cs_pl(ihru)%pl_up(ipl)%path(mpath))
-          end do
+          allocate (cs_pl(ihru)%path(mpath))
           allocate (cs_irr(ihru)%path(mpath))
         end if
 
         isp_ini = hru(ihru)%dbs%soil_plant_init
-        ipath_db = sol_plt_ini_cs(isp_ini)%path
+        ipath_db = sol_plt_ini(isp_ini)%path
         if (mpath > 0) then
           do ipath = 1, mpath
             do ly = 1, soil(ihru)%nly

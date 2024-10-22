@@ -38,9 +38,8 @@
       use calibration_data_module
       use plant_data_module
       use mgt_operations_module
-      use hru_module, only : hru, ihru, ipl, phubase, yr_skip
+      use hru_module, only : hru, ihru, ipl, phubase, yr_skip, timest
       use plant_module
-      use soil_module
       use time_module
       use climate_module
       use basin_module
@@ -56,6 +55,9 @@
       use water_allocation_module
       
       implicit none
+      
+      !rtb floodplain
+      !integer :: flood_count
 
       integer :: j                   !none          |counter
       integer :: julian_day          !none          |counter
@@ -73,9 +75,16 @@
       real :: sno_init
       integer :: iob                 !              |
       integer :: curyr               !              |
-      integer :: mo                  !              |
-      integer :: day_mo              !              |
+      integer :: iwgn                !              |
+      integer :: ipg                 !              |
+      integer :: ireg                !              |
+      integer :: ilu                 !              |
+      integer :: mo                    !           |
+      integer :: day_mo                !           |
       integer :: iwallo, imallo
+
+      integer :: day_index !rtb gwflow
+      
       time%yrc = time%yrc_start
       
       !! generate precip for the first day - %precip_next
@@ -93,10 +102,10 @@
       call cli_precip_control (0)
 
       do curyr = 1, time%nbyr
-    !!!!!  uncomment next three lines for RELEASE version only (Srin/Karim)
+    !!!!!  uncomment next two lines for RELEASE version only (Srin/Karim)
           !call DATE_AND_TIME (b(1), b(2), b(3), date_time)
           !write (*,1235) cal_sim, time%yrc
-    !1235  format (1x, a, 2x, i4)
+    !1235 format (1x, a, 2x, i4)
           
         time%yrs = curyr
 
@@ -141,7 +150,7 @@
         !! set initial soil water for hru, basin and lsu - for checking water balance
         if (pco%sw_init == "n") then
           if (time%yrs > pco%nyskip) then
-            call basin_sw_init     !***jga 
+            call basin_sw_init
             call aqu_pest_output_init
             pco%sw_init = "y"  !! won't reset again
           end if
@@ -151,6 +160,7 @@
           time%day = julian_day
           !! determine month and day of month - time%mo and time%day_mo
           call xmon (time%day, mo, day_mo)
+
           time%mo = mo
           time%day_mo = day_mo
           
@@ -251,9 +261,16 @@
               call mallo_control (imallo)
             end do
           end if
-          
+
+          !rtb floodplain
+          !flood_freq = 0
+
           call command              !! command loop 
           
+          !rtb floodplain - output array of floodplain flags
+          !write(5555,1235) (flood_freq(flood_count),flood_count=1,2407)
+
+        
           ! reset base0 heat units and yr_skip at end of year for southern hemisphere
           ! near winter solstace (winter solstice is around June 22)
           if (time%day == 181) then
@@ -344,6 +361,7 @@
               if (pldb(idp)%typ == "perennial") then
                 pcom(j)%plcur(ipl)%curyr_mat = pcom(j)%plcur(ipl)%curyr_mat + 1
                 pcom(j)%plcur(ipl)%curyr_mat = Min(pcom(j)%plcur(ipl)%curyr_mat,pldb(idp)%mat_yrs)
+                pcom(j)%plcur(ipl)%curyr_gro = pcom(j)%plcur(ipl)%curyr_gro + 1
               end if
             end if
           end do
@@ -364,20 +382,10 @@
           end if
         end do      
 
-        !! update simulation year
-        time%yrc = time%yrc + 1
+      !! update simulation year
+      time%yrc = time%yrc + 1
       end do            !!     end annual loop
-      
-      do ich = 1, sp_ob%chandeg
-        !! write channel morphology - downcutting and widening
-        ch_morph(ich)%w_yr = ch_morph(ich)%w_yr / sd_ch(ich)%chw / time%yrs_prt
-        ch_morph(ich)%d_yr = ch_morph(ich)%d_yr / sd_ch(ich)%chd / time%yrs_prt
-        ch_morph(ich)%fp_mm = ch_morph(ich)%fp_mm / (3. * sd_ch(ich)%chw *           &
-                                         sd_ch(ich)%chl * 1000.) / time%yrs_prt
-        iob = sp_ob1%chandeg + ich - 1
-        !write (7778,*) ich, ob(iob)%name, ch_morph(ich)%w_yr, ch_morph(ich)%d_yr, ch_morph(ich)%fp_mm
-      end do
-          
+     
       !! ave annual calibration output and reset time for next simulation
       call calsoft_ave_output
       yrs_print = time%yrs_prt

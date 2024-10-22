@@ -7,40 +7,38 @@
       use constituent_mass_module
       use pesticide_data_module
       use water_body_module
-      use res_salt_module
-      use res_cs_module
       
       implicit none
       
       integer :: ires        !none          |counter
+      integer :: iprop       !              |     
+      integer :: ihyd        !none          |counter 
+      integer :: ised        !none          |counter 
       integer :: lnvol       !              |
       real :: resdif         !              |
       integer :: i           !none          |counter
       integer :: idat        !none          |counter
-      integer :: icon        !none          |
       integer :: init        !              | 
       integer :: ipest       !none          |counter
       integer :: ipath       !              |
-      integer :: isalt       !              |counter for salt ions !rtb salt
+      integer :: isalt       !              |
       integer :: ipest_db    !none      |counter
 
       do ires = 1, sp_ob%res
-        !! set initial volumes for res and hru types and convert units
-        res_ob(ires)%ob  = sp_ob1%res + ires - 1
-        res_ob(ires)%evol = res_hyd(ires)%evol * 10000.       !! ha-m => m**3
-        res_ob(ires)%pvol = res_hyd(ires)%pvol * 10000.       !! ha-m => m**3
-        res_ob(ires)%esa = res_hyd(ires)%esa
-        res_ob(ires)%psa = res_hyd(ires)%psa
+        !! set initial volumes for res and hru types
+        !! convert units
+        iprop = res_ob(ires)%props
+        ihyd = res_dat(iprop)%hyd
+        res_ob(ires)%evol = res_hyd(ihyd)%evol * 10000.       !! ha-m => m**3
+        res_ob(ires)%pvol = res_hyd(ihyd)%pvol * 10000.       !! ha-m => m**3
+        res_ob(ires)%esa = res_hyd(ihyd)%esa
+        res_ob(ires)%psa = res_hyd(ihyd)%psa
         !! set initial weir height to principal depth - m
         res_ob(ires)%weir_hgt = res_ob(ires)%pvol / (res_ob(ires)%psa * 10000.)
         
-        !! use br1 as lag - then compute actual br1 (no option to input actual br1)
-        res_ob(ires)%lag_up = res_hyd(ires)%br1
-        res_ob(ires)%lag_down = res_hyd(ires)%br2
-        
         !! calculate shape parameters for surface area equation
-        resdif = res_hyd(ires)%evol - res_hyd(ires)%pvol
-        if ((res_hyd(ires)%esa - res_hyd(ires)%psa) > 0. .and. resdif > 0.) then
+        resdif = res_hyd(ihyd)%evol - res_hyd(ihyd)%pvol
+        if ((res_hyd(ihyd)%esa - res_hyd(ihyd)%psa) > 0. .and. resdif > 0.) then
           lnvol = Log10(res_ob(ires)%evol) - Log10(res_ob(ires)%pvol)
           if (lnvol > 1.e-4) then
             res_ob(ires)%br2 = (Log10(res_ob(ires)%esa) - Log10(res_ob(ires)%psa)) / lnvol
@@ -87,7 +85,8 @@
             res_water(ires)%pest(ipest) = pest_water_ini(init)%water(ipest)
             res_benthic(ires)%pest(ipest) = pest_water_ini(init)%benthic(ipest)
             !! calculate mixing velocity using molecular weight and porosity
-            res_ob(ires)%aq_mix(ipest) = pestdb(ipest_db)%mol_wt * (1. - res_sed(ires)%bd / 2.65)
+            ised = res_dat(idat)%sed
+            res_ob(ires)%aq_mix(ipest) = pestdb(ipest_db)%mol_wt * (1. - res_sed(ised)%bd / 2.65)
           end do
                   
           !! initialize pathogens in reservoir water and benthic from input data
@@ -97,58 +96,19 @@
             res_benthic(ires)%path(ipath) = path_water_ini(init)%benthic(ipath)
           end do
                         
+          !! initialize salts in reservoir water and benthic from input data
+          init = res_init(i)%salt
+          do isalt = 1, cs_db%num_salts
+            res_water(ires)%salt(isalt) = salt_water_ini(init)%water(isalt)
+            res_benthic(ires)%salt(isalt) = salt_water_ini(init)%benthic(isalt)
+          end do
+        
           !! calculate initial surface area       
           res_wat_d(ires)%area_ha = res_ob(ires)%br1 * res(ires)%flo ** res_ob(ires)%br2
 
-          !! initialize salts in reservoir water, from database file (salt.res)
-          !rtb salt
-          if(cs_db%num_salts > 0) then
-            idat = res_ob(ires)%props
-            icon = res_dat(idat)%salt !database to use (in salt_res file)
-            if(icon > 0) then
-              do isalt = 1, cs_db%num_salts
-                res_water(ires)%saltc(isalt) = res_salt_data(icon)%c_init(isalt) !concentration (g/m3)
-                res_water(ires)%salt(isalt) = res_water(ires)%saltc(isalt) * res(ires)%flo / 1000. !g/m3 * m3 / 1000. = kg
-              enddo
-						else
-              do isalt = 1, cs_db%num_salts
-                res_water(ires)%saltc(isalt) = 0. !concentration (g/m3)
-                res_water(ires)%salt(isalt) = 0. !kg
-              enddo 
-            endif
-          endif
-          
-          !! initialize constituents in reservoir water, from database file (cs_res)
-          !rtb cs
-          if(cs_db%num_cs > 0) then
-            idat = res_ob(ires)%props
-            icon = res_dat(idat)%cs !database to use (in cs.res file)
-            if(icon > 0) then
-              !seo4
-              res_water(ires)%csc(1) = res_cs_data(icon)%c_seo4 !concentration (g/m3)
-              res_water(ires)%cs(1) = res_water(ires)%csc(1) * res(ires)%flo / 1000. !g/m3 * m3 / 1000. = kg
-              !seo3
-              res_water(ires)%csc(2) = res_cs_data(icon)%c_seo3 !concentration (g/m3)
-              res_water(ires)%cs(2) = res_water(ires)%csc(2) * res(ires)%flo / 1000. !g/m3 * m3 / 1000. = kg
-              !boron
-              res_water(ires)%csc(3) = res_cs_data(icon)%c_born !concentration (g/m3)
-              res_water(ires)%cs(3) = res_water(ires)%csc(3) * res(ires)%flo / 1000. !g/m3 * m3 / 1000. = kg
-            else
-              !seo4
-              res_water(ires)%csc(1) = 0.
-              res_water(ires)%cs(1) = 0.
-              !seo3
-              res_water(ires)%csc(2) = 0.
-              res_water(ires)%cs(2) = 0.
-              !boron
-              res_water(ires)%csc(3) = 0.
-              res_water(ires)%cs(3) = 0.
-            endif
-          endif
-          
-        endif
-        
+        end if
       end do
+                                   
       close(105)
 
       return

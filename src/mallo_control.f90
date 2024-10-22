@@ -1,6 +1,7 @@
       subroutine mallo_control (imallo)
       
       use manure_allocation_module
+      use hydrograph_module, only : irrig
       use hru_module
       use basin_module
       use time_module
@@ -19,6 +20,7 @@
       integer :: ifrt                       !number in fertilizer.frt
       integer :: ifertop                    !number in chem_app file
       real :: frt_kg                        !m3     |demand
+      real :: irr_mm                        !mm     |irrigation applied
 
       !! zero demand, withdrawal, and unmet for entire allocation object
       mallo(imallo)%tot = malloz
@@ -33,7 +35,7 @@
       !!loop through each demand object for manure demand
       do idmd = 1, mallo(imallo)%dmd_obs
         !! check decision table for manure application
-        if (mallo(imallo)%dmd(idmd)%dtbl /= "null" .and. mallo(imallo)%dmd(idmd)%dtbl_num /= 0) then
+        if (mallo(imallo)%dmd(idmd)%dtbl /= "null" .and. mallo(imallo)%dmd(idmd)%dtbl_num /= "0") then
           j = mallo(imallo)%dmd(idmd)%ob_num
           id = mallo(imallo)%dmd(idmd)%dtbl_num
           d_tbl => dtbl_lum(id)
@@ -51,7 +53,7 @@
           frt_kg = mallo(imallo)%dmd(idmd)%manure_amt%app_t_ha      !amount applied in kg/ha
           ifertop = mallo(imallo)%dmd(idmd)%manure_amt%app_method   !surface application fraction from chem app data base
           ihru = mallo(imallo)%dmd(idmd)%ob_num                        !hru number
-          call pl_fert (ifrt, frt_kg, ifertop)
+          call pl_fert (ihru, ifrt, frt_kg, ifertop)
           mallo(imallo)%dmd(idmd)%manure_amt = manure_amtz
           
           !! subtract manure from source
