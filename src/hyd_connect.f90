@@ -55,6 +55,7 @@
       integer :: npaths
       integer :: nmetals
       integer :: nsalts
+      integer :: ielem1
       
       
       eof = 0
@@ -222,6 +223,20 @@
             dfn_sum(iob) = dfn_sum(iob) + 1     !sum of elements in the routing unit object
           end do
         end do
+        
+
+        !! print out hru and ru id !spark
+        if (bsn_cc%uhyd==1)then
+          open(100101,file="hru_lsu.csv") !temporary output for paddy !spark
+          write(100101,'(2a7)')"runame,","hruid,"
+        
+          do iru = 1, sp_ob%ru
+            do ielem1 = 1, ru_def(iru)%num_tot
+              ! write (*,*) ru_def(iru)%name,  ru_def(iru)%num(ielem1)
+              write(100101,'(1(a7,","),1(I0,","))') ru_def(iru)%name,  ru_def(iru)%num(ielem1)
+            end do
+          end do
+        end if
       
       !! determine number of recieving units and set object numbers for outflow hyds
         do i = 1, sp_ob%objs

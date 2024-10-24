@@ -10,13 +10,13 @@
       integer :: date_time(8)           !              |
       character*10 b(3)                 !              |
     
-      prog = " SWAT+ Apr 12 2023       MODULAR Rev 2023.60.5.6"
+      prog = " SWAT+ Apr 12 2023       MODULAR Rev 2023.60.5.7" 
 
       write (*,1000)
       open (9003,file='simulation.out')
       write (9003,1000)
  1000 format(1x,"                  SWAT+               ",/,             &
-     &          "             Revision 60.5.6          ",/,             &
+     &          "             Revision 60.5.7          ",/,             &
      &          "      Soil & Water Assessment Tool    ",/,             &
      &          "               PC Version             ",/,             &
      &          "    Program reading . . . executing",/)
@@ -93,9 +93,10 @@
       ! save initial time settings for soft calibration runs
       time_init = time
       if (bsn_cc%uhyd==1)then
-      open(100100,file="paddy_test.csv") !temporary output for paddy Jaehak 2022 
-      write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT" 
+      open(100100,file="paddy_daily.csv") !temporary output for paddy Jaehak 2022 
+      write(100100,'(4a7,20a21)')"Year,","Mon,","Day,","HRU,","Precip,","Irrig,","Seep,","PET,","ET,","WeirH,","Wtrdep,","WeirQ,","SW,","Sedcon,","SedYld,","NO3Con,","NO3Yld,","LAI,","SALT,","phubase,","phumat,"
       end if
+      
 
       !! simulate watershed processes
       if (time%step < 0) then

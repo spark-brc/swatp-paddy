@@ -127,7 +127,7 @@
             ru_n(iru) = 0.1
           end if
         end do
-      end do
-            
+      end do    
+      
       return
       end subroutine hru_fr_change
