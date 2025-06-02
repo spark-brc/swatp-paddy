@@ -1,6 +1,6 @@
         subroutine cbn_zhang2
     
-        use hru_module, only : ihru, tillage_days, tillage_depth, tillage_factor, tillage_switch
+        use hru_module, only : ihru, tillage_days, tillage_depth, tillage_factor, tillage_switch, ipl
         use soil_module
         use basin_module
         use organic_mineral_mass_module
@@ -18,7 +18,7 @@
         !!==============================================
         !! local variables
        !rnmn
-       !abco2   : allocation from biomass to co2; 0.6 (surface litter), 0.85–0.68*(claf + silf) (all other layers) (parton et al., 1993, 1994)
+       !abco2   : allocation from biomass to co2; 0.6 (surface litter), 0.85ï¿½0.68*(claf + silf) (all other layers) (parton et al., 1993, 1994)
        !abl     : carbon allocation from biomass to leaching; abl = (1-exp(-f/(0.01* sw+ 0.1*(kdbm)*db)) (williams, 1995)
        !abp     : allocation from biomass to passive humus; 0 (surface litter), 0.003 + 0.032*claf (all other layers) (parton et al., 1993, 1994)
        !almco2  : allocation from metabolic litter to co2; 0.6 (surface litter), 0.55 (all other layers) (parton et al., 1993, 1994)
@@ -41,7 +41,7 @@
        !cpn3    : potential n deficit resulting from the transformation of microbial biomass; calc as (pn5+pn6)-bmntp if bmntp < (pn5+pn6), otherwise = 0 (kg n ha-1 day-1)
        !cpn4    : potential n deficit resulting from the transformation of slow humus; calc as (pn7+pn8)-hsntp if hsntp < (pn7+pn8), otherwise = 0 (kg n ha-1 day-1)
        !cpn5    : potential n deficit resulting from the transformation of passive humus; calc as pn9-hpntp if hpntp < pn9, otherwise = 0 (kg n ha-1 day-1)
-       !cs      : combined factor controlling biological processes [cs = sqrt(cdg×sut)* 0.8*ox*x1), cs < 10; cs = 10, cs>=10 (williams, 1995)]
+       !cs      : combined factor controlling biological processes [cs = sqrt(cdgï¿½sut)* 0.8*ox*x1), cs < 10; cs = 10, cs>=10 (williams, 1995)]
        !dbp     : soil bulk density of plow layer (mg m-3) (not used)
        !hsctp   : potential transformation of c in slow humus (kg ha-1 day-1)
        !hsntp   : potential transformation of n in slow humus (kg ha-1 day-1)
@@ -51,7 +51,7 @@
                 !layers = 0.000012 day-1) (parton et al.,1993, 1994)
        !hsr     : rate of transformation of slow humus under optimal conditions (all layers
                 != 0.0005 day-1) (parton et al., 1993, 1994; vitousek et al., 1993)
-       !koc     : liquid–solid partition coefficient for microbial biomass (10^3 m^3 mg-1)     
+       !koc     : liquidï¿½solid partition coefficient for microbial biomass (10^3 m^3 mg-1)     
        !lmf     : fraction of the litter that is metabolic    
        !lmnf    : fraction of metabolic litter that is n (kg kg-1)  
        !lmr     : rate of transformation of metabolic litter under optimal conditions (surface =
@@ -110,7 +110,7 @@
        real :: sut               !                     |soil water control on biological processes
        real :: cdg               !                     |soil temperature control on biological processes
        real :: ox                !                     |oxygen control on biological processes with soil depth
-       real :: cs                !                     |combined factor controlling biological processes [cs = sqrt(cdg×sut)* 0.8*ox*x1), cs < 10; cs = 10, cs>=10 (williams, 1995)]
+       real :: cs                !                     |combined factor controlling biological processes [cs = sqrt(cdgï¿½sut)* 0.8*ox*x1), cs < 10; cs = 10, cs>=10 (williams, 1995)]
        real :: x1                !none                 |tillage control on residue decomposition (not used)
        real :: x3                !none                 |amount of c transformed from passive, slow, metabolic, and non-lignin structural pools to microbial pool
        real :: lmf               !frac                 |fraction of the litter that is metabolic 
@@ -211,6 +211,7 @@
        real :: rto               !none                 |cloud cover factor
        real :: rspc              !                     |
        real :: xx                !varies    |variable to hold calculation results
+       character(len=10) :: ch4module    !varies    | methane module type  !spark  
        
        !! initialize local variables
        deltawn = 0.
@@ -915,6 +916,21 @@
               !!==================================
               soil1(j)%tot(k)%m = soil1(j)%str(k)%m + soil1(j)%meta(k)%m            
               soil1(j)%tot(k)%c = 100. * (soil1(j)%hs(k)%c + soil1(j)%hp(k)%c + soil1(j)%microb(k)%c) / sol_mass 
+              
+              !! ================================================================= !spark
+              ch4module = 'daycent'
+              select case (trim(ch4module))
+                case ('daycent')
+                  call ch4_daycent(k)
+                case ('dndc')
+                  call ch4_dndc(k)
+                case ("meres")
+                  call ch4_meres(k)
+              end select
+              !! ================================================================= !spark                      
+              
+              
+              
         end if  !soil temp and soil water > 0.
 
       end do      !soil layer loop

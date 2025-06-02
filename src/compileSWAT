@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# prepare intel fortran compiler
+# source /opt/intel/oneapi/setvars.sh > .null
+source /home/spark/intel/oneapi/setvars.sh
+source /opt/intel/oneapi/setvars.sh
+
+compiler="ifx"
+
+echo "compiling hru_module.f90"
+$compiler -c hru_module.f90 -traceback -O3 -parallel
+echo 
+echo "compiling time_module.f90"
+$compiler -c time_module.f90 -traceback -O3 -parallel
+echo 
+echo "compiling constituent_mass_module.f90"
+$compiler -c constituent_mass_module.f90 -traceback -O3 -parallel
+echo 
+echo "compiling all other modules"
+$compiler -c *_module.f90 -traceback -O3 -parallel
+echo 
+echo "compiling allocate_parms.f90"
+$compiler -c allocate_parms.f90 -traceback -O3 -parallel
+echo 
+echo "compilling cs_aquifer.f90"
+$compiler -c cs_aquifer.f90 -traceback -O3 -parallel
+echo 
+echo "compiling salt_aquifer.f90"
+$compiler -c salt_aquifer.f90 -traceback -O3 -parallel
+
+$compiler -c aqu_initial.f90 -traceback -O3 -parallel
+$compiler -c cs_lch.f90 -traceback -O3 -parallel
+$compiler -c cs_rctn_aqu.f90 -traceback -O3 -parallel
+$compiler -c cs_rctn_hru.f90 -traceback -O3 -parallel
+$compiler -c cs_reactions_read.f90 -traceback -O3 -parallel
+$compiler -c cs_sed.f90 -traceback -O3 -parallel
+$compiler -c cs_sorb_aqu.f90 -traceback -O3 -parallel
+$compiler -c cs_sorb_hru.f90 -traceback -O3 -parallel
+$compiler -c salt_chem_aqu.f90 -traceback -O3 -parallel
+$compiler -c salt_chem_hru.f90 -traceback -O3 -parallel
+$compiler -c salt_chem_soil_single.f90 -traceback -O3 -parallel
+$compiler -c salt_lch.f90 -traceback -O3 -parallel
+
+echo
+echo echo "compiling all other .f90 files"
+$compiler -c *.f90 -traceback -O3 -parallel
+echo 
+echo "linking to executable 'swatp-paddy_linux' "
+$compiler -o swatp-paddy_linux *.o -static -traceback -O3 -parallel
+echo 
+echo "copying to current exe"
+cp ./swatp-paddy_linux /home/spark/sparkOffice/modules/.bins/swatp-paddy_linux
+echo
+echo "adding executable permissions"
+chmod +x /home/spark/sparkOffice/modules/.bins/swatp-paddy_linux
+
+sudo cp /home/spark/sparkOffice/modules/.bins/swatp-paddy_linux /usr/local/bin/swatplus

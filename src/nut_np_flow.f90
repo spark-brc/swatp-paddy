@@ -16,7 +16,7 @@
 
     !!Local
     real :: EfromCO2                   !         |
-    real :: efco2                      !         |E mineralization resulting from CO2 respiration as result of pool A decomposition (kg N or P ha-1 day-1)  
+    real :: efco2 = 0.                     !         |E mineralization resulting from CO2 respiration as result of pool A decomposition (kg N or P ha-1 day-1)  
 
     !Initialize to zero. 
     E_AtoB = 0.
