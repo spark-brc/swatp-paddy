@@ -52,6 +52,7 @@
       real :: harveff = 0.
       integer :: idb = 0           !none     |counter
       integer :: itr = 0
+      integer :: iwr = 0
 
       j = ihru
       ires= hru(j)%dbs%surf_stor ! for paddy management Jaehak 2022
@@ -441,6 +442,15 @@
             if (wet_ob(j)%evol < wet_ob(j)%pvol*1.1) then
               wet_ob(j)%evol = wet_ob(j)%pvol * 1.1   
             endif
+            
+            !! xwalk weir allocation Jaehak 2025
+            do iwr = 1, db_mx%res_weir
+               if (res_weir(iwr)%name == mgt%op_char) then
+                  wet_ob(j)%iweir = iwr
+                  exit
+               end if
+            end do
+
               
           case ("irrp")  !! continuous irrigation to maintain surface ponding in rice fields Jaehak 2022
             hru(j)%irr_src = mgt%op_plant                   !irrigation source: cha; res; aqu; or unlim                                                 
@@ -451,18 +461,11 @@
             irrig(j)%frac_surq = irrop_db(mgt%op1)%surq
             irrig(j)%salt = irrop_db(mgt%op1)%salt  !ppm salt  Jaehak 2023
             irrig(j)%no3 = irrop_db(mgt%op1)%no3 !ppm  no3
-            pcom(j)%days_irr = 1            ! reset days since last irrigation
-            if (mgt%op3 < 0) then
-              hru(j)%irr_hmax = irrop_db(mgt%op1)%amt_mm     !irrigation amount in irr.org, mm
-              if (hru(j)%irr_hmax>0) hru(j)%paddy_irr = 1 !paddy irrigation is on with manual scheduling
+            if (hru(j)%irr_hmax > 0) then
+               hru(j)%paddy_irr = 1 !paddy irrigation is on with manual scheduling
             else
-              hru(j)%irr_hmax = mgt%op3       !target ponding depth, mm
-              if (mgt%op3 > 0) then
-                hru(j)%paddy_irr = 1 !paddy irrigation is on with manual scheduling
-              else
-                hru(j)%paddy_irr = 0!paddy irrigation is off
-                hru(j)%irr_hmin = 0
-              endif
+               hru(j)%paddy_irr = 0!paddy irrigation is off
+               hru(j)%irr_hmin = 0
             endif
             
           !print irrigation COMMAND

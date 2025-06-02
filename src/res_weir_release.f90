@@ -18,7 +18,7 @@
       real,  intent (in) :: dep       !m 
       real,  intent (in) :: weir_hgt  !m         |height of weir overflow crest from reservoir bottom
       integer,  intent (in) :: jres             !none      |hru number
-      integer :: iweir = 0          !none      |weir ID 
+      integer :: iweir = 1          !none      |weir ID 
       integer :: nstep = 0          !none      |counter
       integer :: tstep = 0          !none      |hru number
       integer :: iac = 0            !none      |counter 
