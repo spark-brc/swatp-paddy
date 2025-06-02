@@ -1,4 +1,4 @@
-      subroutine pl_fert_wet (jj, ifrt, frt_kg, fertop)
+      subroutine pl_fert_wet (ifrt, frt_kg)
       
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!    this subroutine applies N and P specified by date and
@@ -26,22 +26,23 @@
                                           !              |organic N & P concentration of septic effluent
                                           !              |between the fresh organic and the stable 
                                           !              |organic pools
-      integer :: j                        !none          |counter
-      integer :: l                        !none          |counter 
-      integer, intent (in) :: jj          !none          |counter
+      integer :: j = 0                    !none          |counter
       integer, intent (in) :: ifrt        !              |fertilizer type from fert data base
-      integer, intent (in) :: fertop      !              | 
       real, intent (in) :: frt_kg         !kg/ha         |amount of fertilizer applied
-      real :: xx                          !              |
-      real :: gc                          !none          |fraction of ground covered by plant foliage
-      real :: gc1                         !              |
-      real :: swf                         !cfu           |fraction of manure containing active colony forming units 
-      real :: frt_t                       !              |
       
 
       !!added by zhang
       !!======================
-      real :: X1, X8, X10, XXX, YY, ZZ, XZ, YZ, RLN, orgc_f
+      real :: X1 = 0.
+      real :: X8 = 0.
+      real :: X10 = 0.
+      real :: XXX = 0.
+      real :: YY = 0.
+      real :: ZZ = 0.
+      real :: XZ = 0.
+      real :: YZ = 0.
+      real :: RLN = 0.
+      real :: orgc_f = 0.
       
       j = ihru
       
@@ -66,18 +67,18 @@
         wet(j)%sedp = wet(j)%sedp + frt_kg * fertdb(ifrt)%forgp
       end if
       
-	  !  if (bsn_cc%cswat == 1) then
-	  !    soil1(j)%man(l)%c = soil1(j)%man(l)%c + xx * frt_kg *            &
-   !   		    fertdb(ifrt)%forgn * 10.
-	  !    soil1(j)%man(l)%n = soil1(j)%man(l)%n + xx * frt_kg *            &
-   !   		    fertdb(ifrt)%forgn
-	  !    soil1(j)%man(l)%p = soil1(j)%man(l)%p + xx * frt_kg *            &
-   !   		    fertdb(ifrt)%forgp
-	  !  end if
+      !  if (bsn_cc%cswat == 1) then
+      !    soil1(j)%man(l)%c = soil1(j)%man(l)%c + xx * frt_kg *            &
+   !            fertdb(ifrt)%forgn * 10.
+      !    soil1(j)%man(l)%n = soil1(j)%man(l)%n + xx * frt_kg *            &
+   !            fertdb(ifrt)%forgn
+      !    soil1(j)%man(l)%p = soil1(j)%man(l)%p + xx * frt_kg *            &
+   !            fertdb(ifrt)%forgp
+      !  end if
    !
    !     !!By Zhang for C/N cycling 
    !     !!===========================
-	  !  if (bsn_cc%cswat == 2) then
+      !  if (bsn_cc%cswat == 2) then
    !       soil1(j)%tot(l)%p = soil1(j)%tot(l)%p + rtof * xx *           &
    !           frt_kg * fertdb(ifrt)%forgp
    !       soil1(j)%hsta(l)%p = soil1(j)%hsta(l)%p + (1. - rtof) * xx *  &
@@ -128,12 +129,12 @@
    !       XZ = X1 *orgc_f-XXX
    !       soil1(j)%str(l)%c = soil1(j)%str(l)%c + XZ
    !       
-   !       !assuming lignin C fraction of organic carbon to be 0.175; updating lignin amount in strucutral litter pool
+   !       !assuming lignin C fraction of organic carbon to be 0.175; updating lignin amount in structural litter pool
    !       soil1(j)%lig(l)%c = soil1(j)%lig(l)%c + XZ * .175
    !       !non-lignin part of the structural litter C is also updated;
    !       soil1(j)%lig(l)%n = soil1(j)%lig(l)%n + XZ * (1.-.175) 
    !       
-   !       !YZ is the amount of fertilizer (including C and N) allocated into strucutre litter SOM pool
+   !       !YZ is the amount of fertilizer (including C and N) allocated into structure litter SOM pool
    !       YZ = X1 - YY
    !       soil1(j)%str(l)%m = soil1(j)%str(l)%m + YZ
    !       !assuming lignin fraction of the organic fertilizer allocated into structure litter SOM pool to be 0.175;
@@ -143,7 +144,7 @@
    !       
    !       !end if
    !   
-	  !end if
+      !end if
    !     !!By Zhang for C/N cycling 
    !     !!=========================== 
    !

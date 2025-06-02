@@ -4,21 +4,21 @@
       use mgt_operations_module
       use hydrograph_module
       use hru_module, only : hru
-      use plant_module, only : pcom, pcom_init
+      use plant_module, only : pcom
       use maximum_data_module
       use fertilizer_data_module
       
       implicit none
 
-      integer :: id                   !none       |counter
-      integer :: iauto                !none       |counter
-      integer :: ihru                 !none       |counter
-      integer :: iihru                !none       |counter
-      integer :: isched               !none       |counter
-      integer :: num_fut              !none       |counter
-      integer :: iac                  !none       |counter
-      integer :: idb                  !none       |counter
-      integer :: m_autos              !none       |counter
+      integer :: id = 0               !none       |counter
+      integer :: iauto = 0            !none       |counter
+      integer :: ihru = 0             !none       |counter
+      integer :: iihru = 0            !none       |counter
+      integer :: isched = 0           !none       |counter
+      integer :: num_fut = 0          !none       |counter
+      integer :: iac = 0              !none       |counter
+      integer :: idb = 0              !none       |counter
+      integer :: m_autos = 0          !none       |counter
       
       ! set arrays for counters for dtbl actions (ie: only 1 planting; 2 fert application per year, etc)
       do iihru = 1, sp_ob%hru
@@ -53,9 +53,9 @@
               !! dtbl from water allocation for irrigation demand
               id = hru(ihru)%man_dmd_dtbl
             end if
-            allocate (pcom(ihru)%dtbl(iauto)%num_actions(dtbl_lum(id)%acts))
+            allocate (pcom(ihru)%dtbl(iauto)%num_actions(dtbl_lum(id)%acts), source = 0)
             pcom(ihru)%dtbl(iauto)%num_actions = 1
-            allocate (pcom(ihru)%dtbl(iauto)%days_act(dtbl_lum(id)%acts))
+            allocate (pcom(ihru)%dtbl(iauto)%days_act(dtbl_lum(id)%acts), source = 0)
             pcom(ihru)%dtbl(iauto)%days_act = 0
           
           !! set variables for future fertilizer operations

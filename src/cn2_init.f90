@@ -1,17 +1,16 @@
       subroutine cn2_init (j)
 
-      use hru_module, only : cn2, hru, ihru
+      use hru_module, only : cn2, hru
       use soil_module
       use maximum_data_module
       use landuse_data_module
-      use hydrograph_module, only : sp_ob
       
       implicit none
   
       integer, intent (in)  :: j
-      integer :: icn                 !none       |counter 
-      integer :: isol                !none       |counter 
-      integer :: ilum                !none       |counter 
+      integer :: icn = 0             !none       |counter 
+      integer :: isol = 0            !none       |counter 
+      integer :: ilum = 0            !none       |counter 
       
       !!assign cn2
         ilum = hru(j)%land_use_mgt

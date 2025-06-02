@@ -6,9 +6,8 @@
       use hydrograph_module
       
       implicit none
-      
-      integer :: iob
-      real :: const
+
+      real :: const = 0.
                   
       bchsd_d = chsdz
 

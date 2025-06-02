@@ -1,6 +1,6 @@
       subroutine calsoft_hyd_bfr_latq
 
-      use hru_module, only : cn2, hru, hru_init
+      use hru_module, only : hru, hru_init
       use soil_module
       use plant_module
       use hydrograph_module
@@ -19,27 +19,18 @@
       
       implicit none
       
-      integer :: iter_all      !none      |counter
-      integer :: iterall       !none      |counter
-      integer :: isim          !          |
-      integer :: ireg          !none      |counter
-      integer :: ilum          !none      |counter
-      integer :: iihru         !none      |counter
-      integer :: icn           !none      |counter
-      integer :: ihru_s        !none      |counter
-      integer :: iter_ind      !          |end of loop
-      integer :: ietco         !none      |counter
-      integer :: ik            !none      |counter
-      integer :: nly           !          |end of loop
-      integer :: iperco        !none      |counter
-      real :: rmeas            !          |
-      real :: denom            !          |
-      real :: soft             !          |
-      real :: diff             !          |
-      real :: rto              !          |
-      real :: chg_val          !          | 
-      real :: dep_below_soil   !          |  
-      real :: perc_ln_func
+      integer :: isim = 0      !          |
+      integer :: ireg = 0      !none      |counter
+      integer :: ilum = 0      !none      |counter
+      integer :: iihru = 0     !none      |counter
+      integer :: ihru_s = 0    !none      |counter
+      integer :: iter_ind = 0  !          |end of loop
+      integer :: ik = 0        !none      |counter
+      real :: rmeas = 0.       !          |
+      real :: denom = 0.       !          |
+      real :: soft = 0.        !          |
+      real :: diff = 0.        !          |
+      real :: chg_val = 0.     !          |  
 
       ! calibrate lateral flow
         iter_ind = 1
@@ -124,7 +115,7 @@
             
                 rmeas = lscal(ireg)%lum(ilum)%meas%lfr * lscal(ireg)%lum(ilum)%precip_aa
                 denom = lscal(ireg)%lum(ilum)%prev%lfr - lscal(ireg)%lum(ilum)%aa%lfr
-                if (abs(denom) > 1.e-6) then
+                if (abs(denom) > 1.) then
                   chg_val = - (lscal(ireg)%lum(ilum)%prm_prev%lat_len - lscal(ireg)%lum(ilum)%prm%lat_len)                  &
                     * (lscal(ireg)%lum(ilum)%aa%lfr - rmeas) / denom
                 else
@@ -178,5 +169,5 @@
         end if
         end do  
 
-	  return
+      return
       end subroutine calsoft_hyd_bfr_latq

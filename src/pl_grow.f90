@@ -2,8 +2,7 @@
       
       use plant_data_module
       use basin_module
-      use hru_module, only : hru, uapd, uno3d, par, bioday, ep_day, es_day,              &
-         ihru, ipl, pet_day, rto_no3, rto_solp, sum_no3, sum_solp, uapd_tot, uno3d_tot, vpd
+      use hru_module, only : ihru, ipl
       use plant_module
       use carbon_module
       use organic_mineral_mass_module
@@ -11,11 +10,9 @@
       
       implicit none 
       
-      integer :: j              !none               |HRU number
-      integer :: idp            !none               |plant number from plants.plt
-      real :: resnew_n          !                   |
-      real :: resnew            !                   |  
-
+      integer :: j = 0          !none               |HRU number
+      integer :: idp = 0        !none               |plant number from plants.plt
+ 
       j = ihru
         
       call pl_nut_demand
@@ -43,7 +40,7 @@
 
           call pl_seed_gro(j)
           
-          call pl_partition(j)
+          call pl_partition(j, 0)
 
         end if
         

@@ -38,14 +38,11 @@
       implicit none
       
       integer, intent (in) :: ly1     !none          |soil layer number
-      integer :: j                    !none          |HRU number
-      real :: yy                      !mm            |depth to top of soil layer
-      real :: dg                      !mm            |depth of soil layer
-      real :: ho                      !none          |variable to hold intermediate calculation
+      integer :: j = 0                !none          |HRU number
+      real :: ho = 0.                 !none          |variable to hold intermediate calculation
                                       !              |result
-      real :: ratio                   !none          |ratio of seepage to (latq + sepday)
-      real :: sol_k_sep               !              |
-      real :: adj_lin                 !              |
+      real :: ratio = 0.              !none          |ratio of seepage to (latq + sepday)
+      real :: sol_k_sep = 0.          !              |
 
       j = ihru
 
@@ -95,10 +92,10 @@
       sepday = Max(0., sepday)
       
       !! limit maximum seepage from biozone layer below potential perc amount
-	  if(ly1 == i_sep(j).and.sep(isep)%opt ==1) then
-	    sepday = min(sepday,sol_k_sep *24.)
-	    bz_perc(j) = sepday
-	  end if
+      if(ly1 == i_sep(j).and.sep(isep)%opt ==1) then
+        sepday = min(sepday,sol_k_sep *24.)
+        bz_perc(j) = sepday
+      end if
       
       !! switched to linear relationship for dep_imp and seepage
       if (ly1 == soil(j)%nly) then

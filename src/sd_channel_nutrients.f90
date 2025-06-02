@@ -7,20 +7,20 @@
       
       implicit none
 
-      real :: no3_conc              !              |
-      integer :: inut               !none          |counter
-      integer :: istop              !              |
-      real :: ch_len_inc            !              |
-      real :: ch_len                !              |
-      real :: denit                 !              |
-      real :: sed_reduc             !              |
-      real :: srp_reduc             !              |
-      real :: sed_conc              !mg/L
-      real :: tp_conc               !              |
-      real :: nd_overb              !              | 
-      real :: area_m2               !              | 
-      real :: tss_conc              !              |
-      real :: sedp_reduc            !              |
+      real :: no3_conc = 0.         !              |
+      integer :: inut = 0           !none          |counter
+      integer :: istop = 0          !              |
+      real :: ch_len_inc = 0.       !              |
+      real :: ch_len = 0.           !              |
+      real :: denit = 0.            !              |
+      real :: sed_reduc = 0.        !              |
+      real :: srp_reduc = 0.        !              |
+      real :: sed_conc = 0.         !mg/L
+      real :: tp_conc = 0.          !              |
+      real :: nd_overb = 0.         !              | 
+      real :: area_m2 = 0.          !              | 
+      real :: tss_conc = 0.         !              |
+      real :: sedp_reduc = 0.       !              |
      
       inut = 0
       istop = 0
@@ -33,6 +33,7 @@
       no3_conc = ht1%no3
       sed_conc = ht1%sed
       tp_conc = ht1%sedp + ht1%solp
+      nd_overb = 0.
       
       !! loop for channel increment
       do while (istop == 0)
@@ -53,7 +54,7 @@
               denit = 10. ** (rte_nut(inut)%no3_slp_ob * alog(no3_conc) + rte_nut(inut)%no3_int_ob)  !mg-N/m^2/hr
               denit = denit * area_m2 * 24. / 1.e6     !kg/d = mg/m2/h * m2 * hr/d)
               ht2%no3 = ht2%no3 - denit
-              ht2%no3 = amax1(0., ht2%no3)
+              ht2%no3 = max(0., ht2%no3)
             end if
             no3_conc = 1000. * ht2%no3 / ht2%flo
             !turbid = ht1%sed / rte_nut(inut)%turb_tss_slp
@@ -64,7 +65,7 @@
               sed_reduc = (rte_nut(inut)%tss_slp * tss_conc + rte_nut(inut)%tss_int)        !mg/L/m^2
               sed_reduc = sed_reduc * area_m2 * ht2%flo / 1000000.     !ton/d = mg/L/m^2 * m2 * (t / 1000000000. mg) * flo(m3/d) 1000. L/m3
               ht2%sed = ht2%sed - sed_reduc
-              ht2%sed = amax1(0., ht2%sed)
+              ht2%sed = max(0., ht2%sed)
             end if
             sed_conc = 1000000. * ht2%sed / ht2%flo
             
@@ -74,11 +75,11 @@
               
                srp_reduc = 0.10 * tp_reduc
                ht2%solp = ht2%solp - srp_reduc
-               ht2%solp = amax1(0., ht2%solp)
+               ht2%solp = max(0., ht2%solp)
             
                sedp_reduc = 0.90 * tp_reduc
                ht2%sedp = ht2%sedp - sedp_reduc
-               ht2%sedp = amax1(0., ht2%sedp)
+               ht2%sedp = max(0., ht2%sedp)
             end if
             tp_conc = 1000. * (ht1%sedp + ht1%solp) / ht2%flo
             
@@ -96,7 +97,7 @@
               denit = 10. ** (rte_nut(inut)%no3_slp_ub * alog(no3_conc) + rte_nut(inut)%no3_int_ub)  !mg-N/m^2/hr
               denit = denit * area_m2 * 24. / 1.e6     !kg/d = mg/m2/h * m2 * hr/d)
               ht2%no3 = ht2%no3 - denit
-              ht2%no3 = amax1(0., ht2%no3)
+              ht2%no3 = max(0., ht2%no3)
             end if
             no3_conc = 1000. * ht2%no3 / ht2%flo
           end if
@@ -107,7 +108,7 @@
             denit = 10. ** (rte_nut(inut)%no3_slp * alog(no3_conc) + rte_nut(inut)%no3_int) !mg-N/m^2/hr
             denit = denit * area_m2 * 24. / 1.e6     !kg/d = mg/m2/h * m2 * hr/d)
             ht2%no3 = ht2%no3 - denit
-            ht2%no3 = amax1(0., ht2%no3)
+            ht2%no3 = max(0., ht2%no3)
           end if
           no3_conc = 1000. * ht2%no3 / ht2%flo
         end if

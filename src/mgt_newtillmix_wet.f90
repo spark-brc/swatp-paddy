@@ -22,7 +22,7 @@
       use tillage_data_module
       use basin_module
       use organic_mineral_mass_module
-      use hru_module, only: hru, tillage_days, tillage_depth, tillage_switch
+      use hru_module, only: hru
       use soil_module
       use constituent_mass_module
       use plant_module
@@ -33,17 +33,14 @@
 
       integer, intent (in) :: jj       !none           |HRU number
       integer, intent (in) :: idtill   !none           |tillage type
-      integer :: l                     !none           |counter
-      integer :: k                     !none           |counter
-      integer :: kk                    !               |
-      integer :: npmx                  !               |
-      integer :: ipl
+      integer :: l = 0                 !none           |counter
+      integer :: k = 0                 !none           |counter
+      integer :: npmx = 0              !               |
       !CB 12/2/09 nl and a are not used.
-      real :: emix                     !none           |mixing efficiency
-      real :: dtil                     !mm             |depth of mixing
-      real :: frac_mixed               !               |
-      real :: frac_non_mixed           !               |
-      real :: maxmix                   !none           | maximum mixing eff to preserve specified minimum residue cover
+      real :: emix = 0.                !none           |mixing efficiency
+      real :: dtil = 0.                !mm             |depth of mixing
+      real :: frac_mixed = 0.          !               |
+      real :: frac_non_mixed = 0.      !               |
       !!by zhang
       !!=============   
       real :: smix(22+cs_db%num_pests+12)         !varies         |amount of substance in soil profile
@@ -57,7 +54,7 @@
       real :: sol_msn(soil(jj)%nly)     !              |sol_mass not mixed 
       real :: frac_dep(soil(jj)%nly)    !              |fraction of soil layer in tillage depth
       real :: frac_dep1(soil(jj)%nly)    !              |fraction of soil layer in tillage depth plus ponding water
-      real :: frac1, frac2, tdep
+      real :: tdep = 0.
 
       npmx = cs_db%num_pests
 
@@ -97,8 +94,8 @@
 
           if (soil(jj)%phys(l)%d <= dtil) then
             !! msm = mass of soil mixed for the layer
-            !! msn = mass of soil not mixed for the layer		
-            sol_msm(l) = emix * sol_mass(l)	
+            !! msn = mass of soil not mixed for the layer       
+            sol_msm(l) = emix * sol_mass(l) 
             sol_msn(l) = sol_mass(l) - sol_msm(l)
             frac_dep(l) = soil(jj)%phys(l)%thick / dtil
             frac_dep1(l) = soil(jj)%phys(l)%thick / tdep
@@ -140,20 +137,20 @@
             !!by zhang
             !!============== 
           if (bsn_cc%cswat == 2) then         
-	          smix(20+npmx+1) = smix(20+npmx+1) + soil1(jj)%str(l)%c * frac_mixed
-	          smix(20+npmx+2) = smix(20+npmx+2) + soil1(jj)%lig(l)%c * frac_mixed
-	          smix(20+npmx+3) = smix(20+npmx+3) + soil1(jj)%lig(l)%n* frac_mixed
-	          smix(20+npmx+4) = smix(20+npmx+4) + soil1(jj)%meta(l)%c * frac_mixed
-	          smix(20+npmx+5) = smix(20+npmx+5) + soil1(jj)%meta(l)%m * frac_mixed
-	          smix(20+npmx+6) = smix(20+npmx+6) + soil1(jj)%lig(l)%m * frac_mixed
-	          smix(20+npmx+7) = smix(20+npmx+7) + soil1(jj)%str(l)%m * frac_mixed  
-	        
-	          smix(20+npmx+8) = smix(20+npmx+8) + soil1(jj)%str(l)%n * frac_mixed
-	          smix(20+npmx+9) = smix(20+npmx+9) + soil1(jj)%meta(l)%n * frac_mixed
-	          smix(20+npmx+10) = smix(20+npmx+10) +soil1(jj)%microb(l)%n* frac_mixed
-	          smix(20+npmx+11) = smix(20+npmx+11) + soil1(jj)%hact(l)%n * frac_mixed
-	          smix(20+npmx+12) = smix(20+npmx+12) + soil1(jj)%hsta(l)%n * frac_mixed  
-	        end if
+              smix(20+npmx+1) = smix(20+npmx+1) + soil1(jj)%str(l)%c * frac_mixed
+              smix(20+npmx+2) = smix(20+npmx+2) + soil1(jj)%lig(l)%c * frac_mixed
+              smix(20+npmx+3) = smix(20+npmx+3) + soil1(jj)%lig(l)%n* frac_mixed
+              smix(20+npmx+4) = smix(20+npmx+4) + soil1(jj)%meta(l)%c * frac_mixed
+              smix(20+npmx+5) = smix(20+npmx+5) + soil1(jj)%meta(l)%m * frac_mixed
+              smix(20+npmx+6) = smix(20+npmx+6) + soil1(jj)%lig(l)%m * frac_mixed
+              smix(20+npmx+7) = smix(20+npmx+7) + soil1(jj)%str(l)%m * frac_mixed  
+            
+              smix(20+npmx+8) = smix(20+npmx+8) + soil1(jj)%str(l)%n * frac_mixed
+              smix(20+npmx+9) = smix(20+npmx+9) + soil1(jj)%meta(l)%n * frac_mixed
+              smix(20+npmx+10) = smix(20+npmx+10) +soil1(jj)%microb(l)%n* frac_mixed
+              smix(20+npmx+11) = smix(20+npmx+11) + soil1(jj)%hact(l)%n * frac_mixed
+              smix(20+npmx+12) = smix(20+npmx+12) + soil1(jj)%hsta(l)%n * frac_mixed  
+            end if
         end do
      
         ! sand, silt and clay are % so divide by tillage depth
@@ -170,7 +167,7 @@
 
 
         do l = 1, soil(jj)%nly
-			
+            
           ! reconstitute each soil layer 
           frac_non_mixed = sol_msn(l) / sol_mass(l)
             
@@ -212,8 +209,8 @@
           soil1(jj)%hact(l)%n = soil1(jj)%hact(l)%n * frac_non_mixed + smix(20 + npmx + 11) * frac_dep(l)
           soil1(jj)%hsta(l)%n = soil1(jj)%hsta(l)%n * frac_non_mixed + smix(20 + npmx+12) * frac_dep(l)
           end if
-	       end do
-	
+           end do
+    
         !if (bsn_cc%cswat == 1) then
         !    call mgt_tillfactor(jj,bmix,emix,dtil)
         !end if

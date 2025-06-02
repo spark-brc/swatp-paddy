@@ -1,4 +1,4 @@
-      subroutine wallo_treatment (iwallo, idmd, isrc, dmd_m3)
+      subroutine wallo_treatment (iwallo, idmd)
       
       use water_allocation_module
       use hydrograph_module
@@ -7,10 +7,8 @@
 
       integer, intent (in):: iwallo         !water allocation object number
       integer, intent (in) :: idmd          !water demand object number
-      integer, intent (in) :: isrc          !source object number
-      real, intent (in) :: dmd_m3           !m3     |demand
-      integer :: itrt               !none       |treatment database number
-      integer :: irec               !none       |recall database number
+      integer :: itrt = 0           !none       |treatment database number
+      integer :: irec = 0           !none       |recall database number
       
       !! treatment option for treating water
       if (wallo(iwallo)%dmd(idmd)%treat_typ == "treat") then

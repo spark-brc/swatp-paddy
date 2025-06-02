@@ -4,11 +4,12 @@
          
       implicit none
       
-      integer :: irch                   !              |
-      integer :: idat                   !              |
-      integer :: i                      !none          |counter
+      integer :: irch = 0               !              |
+      integer :: idat = 0               !              |
+      integer :: i = 0                  !none          |counter
          
       call ch_read_init
+      call ch_read_init_cs
 
       call sd_hydsed_read
       call ch_read_hyd
@@ -18,9 +19,9 @@
       call sd_channel_read
       call sd_hydsed_init
 
-      call channel_allo
+      !call channel_allo
           
-      !! intialize stream-aquifer interactions for geomorphic baseflow
+      !! initialize stream-aquifer interactions for geomorphic baseflow
       !! aquifer to channel flow
       call aqu2d_init
       
@@ -41,6 +42,6 @@
       
       call time_conc_init
 
-	  return
+      return
       
       end subroutine proc_cha

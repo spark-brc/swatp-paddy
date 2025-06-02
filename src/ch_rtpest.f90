@@ -79,31 +79,31 @@
       use channel_module
       use sd_channel_module
       use ch_pesticide_module
-      use hydrograph_module, only : ob, jrch, ht1, ch_stor
+      use hydrograph_module, only : jrch, ht1, ht2, ch_stor
       use constituent_mass_module
       use pesticide_data_module
 
       implicit none
       
-      integer :: ipest          !none                   |pesticide counter - sequential
-      integer :: jpst           !none                   |pesticide counter from data base
-      integer :: ipseq          !none                   |sequential basin pesticide number
-      integer :: ipdb           !none                   |seqential pesticide number of daughter pesticide
-      integer :: imeta          !none                   |pesticide metabolite counter
-      real :: mol_wt_rto        !ratio                  |molecular weight ratio of duaghter to parent pesticide
-      real :: pstin             !mg pst                 |total pesticide transported into reach during time step
-      real :: kd                !(mg/kg)/(mg/L)         |koc * carbon
-      real :: depth             !m             |depth of water in reach
-      real :: chpstmass         !mg pst        |mass of pesticide in reach
-      real :: sedpstmass        !mg pst        |mass of pesticide in bed sediment
-      real :: fd2               !units         |description
-      real :: solmax            !units         |description
-      real :: sedcon            !g/m^3         |sediment concentration 
-      real :: tday              !none          |flow duration (fraction of 24 hr)
-      real :: rchwtr            !m^3 H2O       |water stored in reach at beginning of day
-      real :: por               !none          |porosity of bottom sediments
-      real :: pest_init         !mg            |amount of pesticide before decay
-      real :: pest_end          !mg            |amount of pesticide after decay
+      integer :: ipest = 0      !none                   |pesticide counter - sequential
+      integer :: jpst = 0       !none                   |pesticide counter from data base
+      integer :: ipseq = 0      !none                   |sequential basin pesticide number
+      integer :: ipdb = 0       !none                   |sequential pesticide number of daughter pesticide
+      integer :: imeta = 0      !none                   |pesticide metabolite counter
+      real :: mol_wt_rto = 0.   !ratio                  |molecular weight ratio of duaghter to parent pesticide
+      real :: pstin = 0.        !mg pst                 |total pesticide transported into reach during time step
+      real :: kd = 0.           !(mg/kg)/(mg/L)         |koc * carbon
+      real :: depth = 0.        !m             |depth of water in reach
+      real :: chpstmass = 0.    !mg pst        |mass of pesticide in reach
+      real :: sedpstmass = 0.   !mg pst        |mass of pesticide in bed sediment
+      real :: fd2 = 0.          !units         |description
+      real :: solmax = 0.       !units         |description
+      real :: sedcon = 0.       !g/m^3         |sediment concentration 
+      real :: tday = 0.         !none          |flow duration (fraction of 24 hr)
+      real :: por = 0.          !none          |porosity of bottom sediments
+      real :: pest_init = 0.    !mg            |amount of pesticide before decay
+      real :: pest_end = 0.     !mg            |amount of pesticide after decay
+      real :: rto_out = 0.      !none          |ratio of outflow to sum of outflow and storage
 
       !! zero outputs
       chpst_d(jrch) = chpstz
@@ -134,7 +134,7 @@
           ch_water(jrch)%pest(ipest) = 0.
           ch_benthic(jrch)%pest(ipest) = 0.
         end if
-        if (chpstmass + sedpstmass < 1.e-12) return
+        if (chpstmass + sedpstmass < 1.e-12) cycle
 
         !!in-stream processes
         if (wtrin / 86400. > 1.e-9) then
@@ -155,12 +155,12 @@
           !! calculate flow duration
           tday = rttime / 24.0
           if (tday > 1.0) tday = 1.0
-          tday = 1.0
+          !tday = 1.0
 
           !! calculate amount of pesticide that undergoes chemical or biological degradation on day in reach
           pest_init = chpstmass
           if (pest_init > 1.e-12) then
-            pest_end = chpstmass * pestcp(jpst)%decay_a
+            pest_end = chpstmass * (pestcp(jpst)%decay_a ** tday)
             chpstmass = pest_end
             chpst%pest(ipest)%react = pest_init - pest_end
             !! add decay to daughter pesticides
@@ -271,6 +271,12 @@
         end if
         ch_benthic(jrch)%pest(ipest) = sedpstmass
 
+        !! calculate outflow and storage in water column
+        rto_out = ht2%flo / (1.e-6 + ht2%flo + ch_stor(jrch)%flo)
+        rto_out = Min (1., rto_out)
+        hcs2%pest(ipest) = rto_out * chpstmass
+        ch_water(jrch)%pest(ipest) = (1. - rto_out) * chpstmass
+        
       end do
 
       return

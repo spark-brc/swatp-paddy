@@ -3,7 +3,7 @@
       use sd_channel_module
       use hru_lte_module
       use organic_mineral_mass_module
-      use hru_module, only : hru, hru_init, ihru, bss
+      use hru_module, only : hru, hru_init, bss
       use soil_module
       use plant_module
       use plant_data_module
@@ -16,28 +16,27 @@
       
       implicit none
       
-      integer :: nplt
-      integer :: icom
-      integer :: iauto
-      integer :: isched
-      integer :: id
-      integer :: nly1
-      integer :: iihru
+      integer :: nplt = 0
+      integer :: icom = 0
+      integer :: iauto = 0
+      integer :: isched = 0
+      integer :: id = 0
+      integer :: nly1 = 0
+      integer :: iihru = 0
 
       allocate (hru_init(0:sp_ob%hru))
       allocate (soil_init(0:sp_ob%hru))
-      allocate (rsd1_init(0:sp_ob%hru))
       allocate (pl_mass_init(0:sp_ob%hru))
       allocate (pcom_init(0:sp_ob%hru))
 
       do iihru = 1, sp_ob%hru
         icom = hru(iihru)%plant_cov
         nplt = pcomdb(icom)%plants_com
-        allocate (pcom_init(iihru)%plg(nplt)) 
-        allocate (pcom_init(iihru)%plm(nplt)) 
-        allocate (pcom_init(iihru)%plstr(nplt)) 
+        allocate (pcom_init(iihru)%plg(nplt))
+        allocate (pcom_init(iihru)%plm(nplt))
+        allocate (pcom_init(iihru)%plstr(nplt))
         allocate (pcom_init(iihru)%plcur(nplt))
-        allocate (pl_mass_init(iihru)%tot(nplt)) 
+        allocate (pl_mass_init(iihru)%tot(nplt))
         allocate (pl_mass_init(iihru)%ab_gr(nplt))
         allocate (pl_mass_init(iihru)%leaf(nplt))
         allocate (pl_mass_init(iihru)%stem(nplt))
@@ -50,13 +49,11 @@
         allocate (pcom_init(iihru)%dtbl(sched(isched)%num_autos))
         do iauto = 1, sched(isched)%num_autos
           id = sched(isched)%num_db(iauto)
-          allocate (pcom_init(iihru)%dtbl(iauto)%num_actions(dtbl_lum(id)%acts))
+          allocate (pcom_init(iihru)%dtbl(iauto)%num_actions(dtbl_lum(id)%acts), source = 0)
           pcom_init(iihru)%dtbl(iauto)%num_actions = 1
-          allocate (pcom_init(iihru)%dtbl(iauto)%days_act(dtbl_lum(id)%acts))
+          allocate (pcom_init(iihru)%dtbl(iauto)%days_act(dtbl_lum(id)%acts), source = 0)
           pcom_init(iihru)%dtbl(iauto)%days_act = 0
         end do
-             
-        allocate (rsd1_init(iihru)%tot(nplt))
              
         nly1 = soil(iihru)%nly + 1                                                                                                         
         allocate (soil_init(iihru)%ly(nly1))
@@ -72,7 +69,6 @@
         hru_init = hru
         soil_init = soil
         soil1_init = soil1
-        rsd1_init = rsd1
         pcom_init = pcom
         pl_mass_init = pl_mass
         wet = wet_om_init
@@ -101,5 +97,5 @@
         aqu_d = aqu_om_init
       end if
 
-	  return
+      return
       end subroutine cal_allo_init

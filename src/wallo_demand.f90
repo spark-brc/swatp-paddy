@@ -4,15 +4,16 @@
       use hru_module
       use hydrograph_module
       use conditional_module
+      use reservoir_module
       
       implicit none 
 
       integer, intent (in) :: iwallo            !water allocation object number
       integer, intent (in)  :: idmd             !water demand object number
-      integer :: j                  !none       |hru number
-      integer :: id                 !none       |flo_con decision table number
-      integer :: isrc               !none       |source object number
-      integer :: irec               !none       |recall database number
+      integer :: j = 0              !none       |hru number
+      integer :: id = 0             !none       |flo_con decision table number
+      integer :: isrc = 0           !none       |source object number
+      integer :: irec = 0           !none       |recall database number
 
       !! zero total demand for each object
       wallod_out(iwallo)%dmd(idmd)%dmd_tot = 0.
@@ -36,6 +37,22 @@
             end select
           end if
         
+        !! reservoir demand
+        case ("res")
+          !! use average daily or a flow control decision table
+          if (wallo(iwallo)%dmd(idmd)%withdr == "ave_day") then
+            wallod_out(iwallo)%dmd(idmd)%dmd_tot = wallo(iwallo)%dmd(idmd)%amount  
+          else
+            !! use decision table for flow control - water allocation
+            id = wallo(iwallo)%dmd(idmd)%rec_num
+            d_tbl => dtbl_flo(id)
+            j = 0
+            icmd = res_ob(j)%ob
+            call conditions (j, id)
+            call actions (j, icmd, id)
+            wallod_out(iwallo)%dmd(idmd)%dmd_tot = dmd_m3
+          end if
+
         !! diversion demand
         case ("divert")
           !! use average daily or a flow control decision table
@@ -61,9 +78,8 @@
             if (hru(j)%irr_hmax > 0.) then
               wallod_out(iwallo)%dmd(idmd)%dmd_tot = irrig(j)%demand !m3 Irrigation demand based on paddy/wetland target ponding depth Jaehak 2023
             else
-              wallod_out(iwallo)%dmd(idmd)%dmd_tot = wallo(iwallo)%dmd(idmd)%amount * hru(j)%area_ha * 10. !m3 = mm * ha * 10.
+            wallod_out(iwallo)%dmd(idmd)%dmd_tot = wallo(iwallo)%dmd(idmd)%amount * hru(j)%area_ha * 10. !m3 = mm * ha * 10.
             endif
-            
           else
             wallod_out(iwallo)%dmd(idmd)%dmd_tot = 0.
           end if

@@ -13,12 +13,13 @@
       
       implicit none
       
-      integer :: iob              !none      |hru or wro number
-      integer :: iru              !none      |routing unit number
-      integer :: isrc             !none      |irrigation source ID
-      real :: wsa1                !m2        |water surface area 
-      integer :: j,i
-      real :: rto
+      integer :: iob = 0          !none      |hru or wro number
+      integer :: iru = 0          !none      |routing unit number
+      integer :: isrc = 0         !none      |irrigation source ID
+      real :: wsa1 = 0.           !m2        |water surface area 
+      integer :: j = 0
+      integer :: i = 0
+      real :: rto = 0.
       
       j = ihru
       wsa1 = hru(j)%area_ha * 10.
@@ -89,7 +90,8 @@
           if (aqu_d(isrc)%stor > 0.001) then
             rto = min(0.99, irrig(j)%demand / aqu_d(isrc)%stor)            ! ratio of water removed from aquifer volume
           end if
-          irrig(j)%water%flo = rto * aqu_d(isrc)%stor                 ! organics in irrigation water
+      !    irrig(j)%water%flo = rto * aqu_d(isrc)%flo                 ! organics in irrigation water
+          irrig(j)%water%flo = rto * aqu_d(isrc)%stor                 ! organics in irrigation water  Jaehak 2024
           cs_irr(isrc) = rto * cs_aqu(isrc)                           ! constituents in irrigation water
           aqu_d(isrc)%stor = (1. - rto) * aqu_d(isrc)%stor                  ! remainder stays in aquifer
           cs_aqu(isrc) = (1. - rto) * cs_aqu(isrc)  
@@ -106,7 +108,5 @@
       !irrig(j)%frac_surq = irrop_db(mgt%op1)%surq
       irrig(j)%applied = irrig(j)%water%flo / wsa1 * irrig(j)%eff * (1. - irrig(j)%frac_surq) !mm
       irrig(j)%runoff = irrig(j)%water%flo / wsa1 * irrig(j)%eff * irrig(j)%frac_surq !mm
-      !irrig(j)%salt = irrop_db(mgt%op1)%salt * irrig(j)%water%flo * 0.001 !ppm*m3 -> kg salt  Jaehak 2023
-      !irrig(j)%no3 = irrop_db(mgt%op1)%no3 * irrig(j)%water%flo * 0.001 !ppm*m3 -> kg no3
       return
       end subroutine wet_irrp

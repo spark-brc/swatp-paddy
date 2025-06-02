@@ -23,18 +23,18 @@
       
       implicit none
       
-      real :: v6                  !none          |random number between 0.0 and 1.0
-      real :: v7                  !              |
-      real :: rdir2               !              |
-      real :: pi2                 !              |
-      integer :: idir             !none          |counter
-      integer :: idir1            !              |
-      integer :: idir2            !              |
-      integer :: mo               !              |
+      real :: v6 = 0.             !none          |random number between 0.0 and 1.0
+      real :: v7 = 0.             !              |
+      real :: rdir2 = 0.          !              |
+      real :: pi2 = 0.            !              |
+      integer :: idir = 0         !none          |counter
+      integer :: idir1 = 0        !              |
+      integer :: idir2 = 0        !              |
+      integer :: mo = 0           !              |
       integer :: iwgn             !              | 
-      integer :: iwndir           !              |
+      integer :: iwndir = 0       !              |
       real :: aunif               !              |
-      real :: g                   !              |
+      real :: g = 0.              !              |
 
       pi2 = 6.283185
       mo = time%mo
@@ -44,7 +44,8 @@
       wst(iwst)%weat%windsp = wgn(iwgn)%windav(time%mo) * (-Log(v6)) ** 0.3
       
       !! Generate wind direction !!
-      iwndir = wst(iwst)%wco%wndir
+      !!! set to zero, no longer attempt to read in
+      iwndir = 0
       if (iwndir > 0) then
       idir1 = 16
       idir2 = 15

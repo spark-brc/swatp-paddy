@@ -9,13 +9,13 @@
       
       implicit none
       
-      integer :: ilsu           !none       |counter
-      integer :: ielem          !none       |counter
-      integer :: ihru           !none       |counter 
-      integer :: iob            !none       |counter 
-      real :: const             !           |  
-      real :: sw_init           !           |
-      real :: sno_init          !           |
+      integer :: ilsu = 0       !none       |counter
+      integer :: ielem = 0      !none       |counter
+      integer :: ihru = 0       !none       |counter 
+      integer :: iob = 0        !none       |counter 
+      real :: const = 0.        !           |  
+      real :: sw_init = 0.      !           |
+      real :: sno_init = 0.     !           |
           
       !! zero daily outputs before summing
       do ilsu = 1, db_mx%lsu_out
@@ -169,7 +169,7 @@
            if (pco%wb_lsu%y == "y") then
              ruwb_y(ilsu)%sw_final = ruwb_d(ilsu)%sw_final
              ruwb_y(ilsu)%sno_final = ruwb_d(ilsu)%sno_final
-             write (2142,102) time%day, time%mo, time%day_mo, time%yrc, ilsu, "       0", lsu_out(ilsu)%name, ruwb_y(ilsu)
+             write (2142,100) time%day, time%mo, time%day_mo, time%yrc, ilsu, "       0", lsu_out(ilsu)%name, ruwb_y(ilsu)
              if (pco%csvout == "y") then 
                write (2146,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, &
                 ilsu, "       0", lsu_out(ilsu)%name, ruwb_y(ilsu)
@@ -223,7 +223,7 @@
         ruwb_a(ilsu)%sno_init = sno_init
         ruwb_a(ilsu)%sno_final = ruwb_d(ilsu)%sno_final
         
-        write (2143,102) time%day, time%mo, time%day_mo, time%yrc, ilsu, "       0", lsu_out(ilsu)%name, ruwb_a(ilsu)
+        write (2143,100) time%day, time%mo, time%day_mo, time%yrc, ilsu, "       0", lsu_out(ilsu)%name, ruwb_a(ilsu)
         if (pco%csvout == "y") then 
           write (2147,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, ilsu, "       0", lsu_out(ilsu)%name, ruwb_a(ilsu)
         end if 
@@ -256,10 +256,10 @@
       
       return
       
-100   format (1x,4i6,i7,a,2x,a,40f12.3)
+100   format (1x,4i6,i7,a,2x,a,42f12.3)
 102   format (1x,4i6,i7,a,2x,a,40f12.3)
 !103   format (4i6,i8,a,2x,a,6f12.3,29f17.3)
 103   format (4i6,i8,a,2x,a,4f12.3,23f17.3)
-104   format (4i6,i8,a,2x,a,6f12.3,29f17.3)
+!*** tu Wunused-label: 104   format (4i6,i8,a,2x,a,6f12.3,29f17.3)
        
       end subroutine lsu_output

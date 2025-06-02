@@ -65,15 +65,15 @@
       
       implicit none
 
-      integer :: j              !none          |HRU number
-      integer :: ly             !none          |counter
-      real :: crk               !mm H2O        |percolation due to crack flow
-      real :: enratio           !none          |enrichment ratio calculated for day in HRU
-      real :: etday             !mm H2O        |actual amount of evapotranspiration that 
+      integer :: j = 0          !none          |HRU number
+      integer :: ly = 0         !none          |counter
+      real :: crk = 0.          !mm H2O        |percolation due to crack flow
+      real :: enratio = 0.      !none          |enrichment ratio calculated for day in HRU
+      real :: etday = 0.        !mm H2O        |actual amount of evapotranspiration that 
                                 !              |occurs on day in HRU
-      real :: over_flow         !              |
-      real :: sedprev           !              | 
-      integer :: irmmdt         !              | 
+      real :: over_flow = 0.    !              |
+      real :: sedprev = 0.      !              | 
+      integer :: irmmdt = 0     !              | 
 
       j = ihru
 
@@ -99,7 +99,7 @@
         fixn = 0.
         grazn = 0.
         grazp = 0.
-        if (time%step > 0)  hhqday(j,:) = 0.
+        if (time%step > 1)  hhqday(j,:) = 0.
         inflpcp = 0.
         lyrtile = 0.
         qp_cms = 0.
@@ -120,17 +120,17 @@
         vpd = 0.
         voltot = 0.
 
-	!! urban modeling by J.Jeong
-	  sedprev = 0.
-	  ubnrunoff = 0.
-	  irmmdt = 0.
+    !! urban modeling by J.Jeong
+      sedprev = 0.
+      ubnrunoff = 0.
+      irmmdt = 0.
         hhsedy = 0.
         ubntss = 0.
-        wet_seep_day(:)%no3 = 0
-        wet_seep_day(:)%nh3 = 0
-        wet_seep_day(:)%orgn =0
-        wet_seep_day(:)%solp =0
-        wet_seep_day(:)%sedp =0
+        wet_seep_day(j)%no3 = 0
+        wet_seep_day(j)%nh3 = 0
+        wet_seep_day(j)%orgn =0
+        wet_seep_day(j)%solp =0
+        wet_seep_day(j)%sedp =0
 
        return
        end subroutine varinit

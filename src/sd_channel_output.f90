@@ -9,9 +9,9 @@
       implicit none
       
       integer, intent (in) :: ichan         !             |
-      integer :: iob                        !             |
-      integer :: ii                         !             
-      real :: const                         !             |
+      integer :: iob = 0                    !             |
+      integer :: ii = 0                     !             
+      real :: const = 0.                    !             |
 
       iob = sp_ob1%chandeg + ichan - 1
 
@@ -20,8 +20,7 @@
       ch_out_m(ichan) = ch_out_m(ichan) + ch_out_d(ichan)
       ch_wat_m(ichan) = ch_wat_m(ichan) + ch_wat_d(ichan)
       
-!!!!! subdaily print
-         if (pco%day_print == "y" .and. time%step > 0 .and. pco%int_day_cur == pco%int_day) then
+         if (pco%day_print == "y" .and. time%step > 1 .and. pco%int_day_cur == pco%int_day) then
           do ii = 1, time%step 
             write (2508,101)  time%day, time%mo, time%day_mo, time%yrc, ichan, ob(iob)%gis_id, ii, ob(iob)%name,  &
                      ob(iob)%hyd_flo(1,ii)
@@ -100,7 +99,7 @@
 !!!!! average annual print
       if (time%end_sim == 1) then
         !ch_stor_a(ichan) = ch_stor_a(ichan) / time%yrs_prt      !! all storage variables (averaged) must be divided by years
-        ch_in_a(ichan) = ch_in_a(ichan) / time%yrs_prt          !! all inflow and outflow varaibles (summed) are divided by years
+        ch_in_a(ichan) = ch_in_a(ichan) / time%yrs_prt          !! all inflow and outflow variables (summed) are divided by years
         ch_out_a(ichan) = ch_out_a(ichan) / time%yrs_prt
         ch_wat_a(ichan) = ch_wat_a(ichan) / time%yrs_prt        !! all summed variables divided by years
         ch_wat_a(ichan) = ch_wat_a(ichan) // time%yrs_prt       !! all averaged variables divided by years

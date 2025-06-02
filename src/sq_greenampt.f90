@@ -41,18 +41,16 @@
       
       implicit none
       
-      integer :: j                               !none          |HRU number
-      integer :: k                               !none          |counter
-      integer :: kk                              !hour          |hour of day in which runoff is generated
-      real :: adj_hc                             !mm/hr         |adjusted hydraulic conductivity
-      real :: dthet                              !mm/mm         |initial moisture deficit
-      real :: soilw                              !mm H2O        |amount of water in soil profile
-      real :: psidt                              !mm            |suction at wetting front*initial moisture 
+      integer :: j = 0                           !none          |HRU number
+      integer :: k = 0                           !none          |counter
+      real :: adj_hc = 0.                        !mm/hr         |adjusted hydraulic conductivity
+      real :: dthet = 0.                         !mm/mm         |initial moisture deficit
+      real :: soilw = 0.                         !mm H2O        |amount of water in soil profile
+      real :: psidt = 0.                         !mm            |suction at wetting front*initial moisture 
                                                  !              |deficit
-      real :: tst                                !mm H2O        |test value for cumulative infiltration
-      real :: f1                                 !mm H2O        |test value for cumulative infiltration
-      integer :: ulu
-      real :: abstinit
+      real :: tst = 0.                           !mm H2O        |test value for cumulative infiltration
+      real :: f1 = 0.                            !mm H2O        |test value for cumulative infiltration
+      integer :: ulu = 0
       real, dimension (time%step) :: cuminf    !mm H2O        |cumulative infiltration for day
       real, dimension (time%step) :: cumr      !mm H2O        |cumulative rainfall for day
       real, dimension (time%step) :: excum     !mm H2O        |cumulative runoff for day
@@ -156,7 +154,7 @@
           !! the potential for initial dabstraction from paved surface increases based on evaporation
           urb_abstinit(j) = min(bsn_prm%urb_init_abst, urb_abstinit(j) + pet_day / time%step)
         end if
-        !runoff from pervious area
+        !runoff from previous area
         hhqday(j,k) = hhqday(j,k) * (1. - urbdb(ulu)%fcimp) 
            
         !runoff from impervious area with initial abstraction
@@ -181,14 +179,14 @@
       end if
 
       return
- 5000 format(//,"Excess rainfall calculation for day ",i3," of year ",   &  
-              i4," for sub-basin",i4,".",/)
- 5001 format(t2,"Time",t9,"Incremental",t22,"Cumulative",t35,"Rainfall",   &
-             t45,"Infiltration",t59,"Cumulative",t71,"Cumulative",t82,     &  
-             "Incremental",/,t2,"Step",t10,"Rainfall",t23,"Rainfall",      &   
-             t35,"Intensity",t49,"Rate",t58,"Infiltration",t73,"Runoff",   & 
-             t84,"Runoff",/,t12,"(mm)",t25,"(mm)",t36,"(mm/h)",t48,        &    
-             "(mm/h)",t62,"(mm)",t74,"(mm)",t85,"(mm)",/)
- 5002 format(i5,t12,f5.2,t24,f6.2,t36,f6.2,t47,f7.2,t61,f6.2,t73,f6.2,     &  
-             t84,f6.2)
+!*** tu Wunused-label:  5000 format(//,"Excess rainfall calculation for day ",i3," of year ",   &  
+              !i4," for sub-basin",i4,".",/)
+!*** tu Wunused-label:  5001 format(t2,"Time",t9,"Incremental",t22,"Cumulative",t35,"Rainfall",   &
+             !t45,"Infiltration",t59,"Cumulative",t71,"Cumulative",t82,     &  
+             !"Incremental",/,t2,"Step",t10,"Rainfall",t23,"Rainfall",      &   
+             !t35,"Intensity",t49,"Rate",t58,"Infiltration",t73,"Runoff",   & 
+             !t84,"Runoff",/,t12,"(mm)",t25,"(mm)",t36,"(mm/h)",t48,        &    
+             !"(mm/h)",t62,"(mm)",t74,"(mm)",t85,"(mm)",/)
+!*** tu Wunused-label:  5002 format(i5,t12,f5.2,t24,f6.2,t36,f6.2,t47,f7.2,t61,f6.2,t73,f6.2,     &  
+             !t84,f6.2)
       end subroutine sq_greenampt

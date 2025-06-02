@@ -5,14 +5,15 @@
       use calibration_data_module
       use output_landscape_module
       use basin_module
+      use carbon_module
       
       implicit none
 
-      integer :: ihru     !none      |counter
-      integer :: iihru    !          |
-      real :: const       !          |constant used for rate, days, etc
-      real :: sw_init       !          |
-      real :: sno_init       !          |
+      integer :: ihru = 0 !none      |counter
+      integer :: iihru = 0  !          |
+      real :: const = 0.  !          |constant used for rate, days, etc
+      real :: sw_init = 0.  !          |
+      real :: sno_init = 0.  !          |
               
       !! zero daily basin outputs before summing
       sw_init = bwb_d%sw_init
@@ -79,7 +80,7 @@
             write (2060,104) time%day, time%mo, time%day_mo, time%yrc, "        1", "       1", bsn%name, bnb_d  !! nutrient bal
             if (pco%csvout == "y") then 
               write (2064,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bnb_d  !! nutrient bal
-            end if
+              end if
           end if
           if (pco%ls_bsn%d == "y") then
             write (2070,100) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bls_d  !! losses
@@ -119,7 +120,7 @@
             write (2061,104) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bnb_m 
             if (pco%csvout == "y") then 
               write (2065,104) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bnb_m
-            end if 
+              end if 
           end if
           if (pco%ls_bsn%m == "y") then  
             write (2071,100) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bls_m
@@ -128,12 +129,12 @@
             end if 
           end if
           if (pco%pw_bsn%m == "y") then
-            bpw_m%nplnt = bpw_d%nplnt
-            bpw_m%nplnt = bpw_d%pplnt
+            !bpw_m%nplnt = bpw_d%nplnt
+            !bpw_m%nplnt = bpw_d%pplnt
             write (2081,100) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bpw_m
             if (pco%csvout == "y") then 
               write (2085,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bpw_m
-            end if 
+              end if 
           end if
   
           sw_init = bwb_m%sw_final
@@ -180,8 +181,8 @@
              end if 
            end if
            if (pco%pw_bsn%y == "y") then
-             bpw_y%nplnt = bpw_d%nplnt
-             bpw_y%nplnt = bpw_d%pplnt
+             !bpw_y%nplnt = bpw_d%nplnt
+             !bpw_y%nplnt = bpw_d%pplnt
              write (2082,100) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bpw_y
              if (pco%csvout == "y") then 
                write (2086,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bpw_y
@@ -212,8 +213,10 @@
 
         write (2053,103) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bwb_a, cal_sim, cal_adj
         if (pco%csvout == "y") then 
-          write (2057,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bwb_a, cal_sim, cal_adj
+          write (2057,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bwb_a,    &
+                    cal_sim, cal_adj
         end if
+        ban_precip_aa = bwb_a%precip
         bwb_a = hwbz
       end if
       if (time%end_sim == 1 .and. pco%nb_bsn%a == "y") then
@@ -221,8 +224,7 @@
         write (2063,104) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bnb_a
         if (pco%csvout == "y") then 
           write (2067,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bnb_a
-        end if 
-        bnb_a = hnbz
+          end if 
       end if
       if (time%end_sim == 1 .and. pco%ls_bsn%a == "y") then     
         bls_a = bls_a / time%yrs_prt
@@ -235,8 +237,8 @@
       if (time%end_sim == 1 .and. pco%pw_bsn%a == "y") then     
         bpw_a = bpw_a / time%yrs_prt
         bpw_a = bpw_a // time%days_prt
-        bpw_a%nplnt = bpw_d%nplnt
-        bpw_a%nplnt = bpw_d%pplnt
+        !bpw_a%nplnt = bpw_d%nplnt
+        !bpw_a%nplnt = bpw_d%pplnt
         write (2083,100) time%day, time%mo, time%day_mo, time%yrc, "       1", "       1", bsn%name, bpw_a
         if (pco%csvout == "y") then 
           write (2087,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, "       1", "        1", bsn%name, bpw_a
@@ -246,8 +248,8 @@
       
       return
 
-100   format (4i6,2a,2x,a16,40f12.3) 
-103   format (4i6,2x,2a,2x,a16,40f12.3,a,f17.3)
+100   format (4i6,2a,2x,a16,42f12.3) 
+103   format (4i6,2x,2a,2x,a16,42f12.3,a,f17.3)
 104   format (4i6,2a,2x,a16,4f12.3,23f17.3)
        
       end subroutine basin_output

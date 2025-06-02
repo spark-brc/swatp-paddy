@@ -1,5 +1,4 @@
-      subroutine res_weir_release (jres, id, ihyd, pvol_m3, evol_m3, dep, weir_hgt)
-      !! this subroutine calculates weir discharge from a wetland/rice paddy HRU called from manual operation schedule.  
+      subroutine res_weir_release (jres, id, ihyd, evol_m3, dep, weir_hgt)
 
       use reservoir_data_module
       use reservoir_module
@@ -15,31 +14,24 @@
       
       implicit none
       
-      real,  intent (in) :: pvol_m3
       real,  intent (in) :: evol_m3
       real,  intent (in) :: dep       !m 
       real,  intent (in) :: weir_hgt  !m         |height of weir overflow crest from reservoir bottom
       integer,  intent (in) :: jres             !none      |hru number
-      integer :: iweir             !none      |weir ID 
-      integer :: nstep            !none      |counter
-      integer :: tstep            !none      |hru number
-      integer :: iac              !none      |counter 
-      integer :: ic              !none      |counter
-      integer,  intent (in) :: id               !none      |hru number
-      integer :: ial              !none      |counter
-      integer :: irel             !          |
-      integer :: iob              !none      |hru or wro number
-      integer,  intent (in) :: ihyd             !          |
-      real :: vol,vol_above                 !          |
-      real :: b_lo                !          |
-      character(len=1) :: action  !          |
-      real :: res_h               !m         |water depth
-      real :: demand              !m3        |irrigation demand by hru or wro
-      real :: wsa1                !m2        |water surface area 
-      real :: qout                !m3        |weir discharge during short time step
-      real :: hgt                 !m         |height of bottom of weir above bottom of impoundment
-      real :: hgt_above           !m         |height of water above the above bottom of weir
-      real :: sto_max             !m3        |maximum storage volume at the bank top
+      integer :: iweir = 0          !none      |weir ID 
+      integer :: nstep = 0          !none      |counter
+      integer :: tstep = 0          !none      |hru number
+      integer :: iac = 0            !none      |counter 
+      integer :: ic = 0             !none      |counter
+      integer :: weir_flg=0         !none      |counter
+      integer,  intent (in) :: id   !none      |hru number
+      integer,  intent (in) :: ihyd !          |
+      real :: vol = 0.              !          |
+      real :: res_h = 0.            !m         |water depth
+      real :: wsa1 = 0.             !m2        |water surface area 
+      real :: qout = 0.             !m3        |weir discharge during short time step
+      real :: hgt_above = 0.        !m         |height of water above the above bottom of weir
+      real :: vol_above = 0.             !m3        |water volume above the bottom of weir !Jaehak 2024
       
       !! store initial values
       vol = wbody%flo
@@ -47,14 +39,34 @@
       iweir = wet_ob(jres)%iweir
       vol_above = 0 !water storage above weir height
       
-      wsa1 = wbody_wb%area_ha * 10000. !m2      
+      if (wet_hyd(ihyd)%name=='paddy') then
+        !paddy
+        wsa1 = hru(jres)%area_ha * 10000. 
+      else
+        !wetland
+        wsa1 = wbody_wb%area_ha * 10000. !m2
+      endif
+      
       hgt_above = max(0., dep - weir_hgt)  !m ponding depth above weir crest  
-
+      !sto_max = wsa1 * weir_hgt !m3
+      
+      !if (vol > sto_max) then
+      !  ht2%flo = vol - sto_max
+      !  vol = sto_max
+      !endif
+      !write(*,'(10f10.1)') w%precip,vol/wsa1*1000,ht2%flo/wsa1*1000,hru(jres)%water_seep,soil(jres)%sw
+      !! check if reservoir decision table has a weir discharge command
+     ! do iac = 1, dtbl_res(id)%acts
+     !   if (dtbl_res(id)%act(iac)%option == "weir") then
+     !     weir_flg = 1
+     !     exit
+     !   endif
+     ! end do
+      
       do tstep = 1, nstep
           
         !! calculate weir discharge from scheduled management
         if (hgt_above > 0 .and. iweir > 0) then
-
           !emergency spillway discharge Jaehak 2023
           if (vol>evol_m3) then
             ht2%flo = ht2%flo + (wbody%flo - evol_m3) 
@@ -91,7 +103,7 @@
                 vol_above = 0.
               else
                 ht2%flo = ht2%flo + qout 
-                vol = vol - vol_above
+                vol = vol - qout
                 vol_above = vol_above - qout
               end if
                           
@@ -104,9 +116,10 @@
               if (vol_above<=0.001.or.hgt_above<=0.0001) exit
             end do
           endif
+        else
+          ht2%flo = 0.
         endif
         wbody%flo = vol !m3
-
       end do  
 
       return

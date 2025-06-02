@@ -32,7 +32,7 @@
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
-      use hru_module, only : hru, sdr, dormhr, ihru, i_sep, isep, isep_ly, iseptic
+      use hru_module, only : hru, sdr, dormhr, ihru
       use soil_module
       use plant_module
       use climate_module
@@ -48,38 +48,25 @@
       
       implicit none
 
-      integer :: j              !none          |counter            
-      integer :: l              !none          |counter
-      integer :: idp            !              | 
-      real :: t_ch              !hr            |time for flow entering the farthest upstream 
-                                !              |channel to reach the subbasin outlet
-      real :: scmx              !mm/hr         |maximum soil hydraulic conductivity
-      real :: xx                !none          |variable to hold calculation result
-      real :: tsoil             !              | 
-      integer :: iob            !              | 
-      integer :: iwst           !              | 
-      integer :: iwgn           !              | 
-      real :: sffc              !              | 
-      integer :: nly            !none          |end of loop
-      integer :: k              !none          |counter
-      real :: plt_zmx           !              |
-      integer :: ipl            !none          |counter
-      real :: plt_zmxp          !              | 
-      integer :: max            !              |
-      integer :: min            !              |
-      real :: dep_new           !              |
-      integer :: jj             !none          |counter
-      real :: solpst            !              |
-      integer :: n              !              |
-      real :: wt1               !none          |conversion factor to convert kg/ha to g/t(ppm) 
-      integer :: ly             !none          |counter   
-      integer :: isdr           !none          |conversion factor to convert kg/ha to g/t(ppm)
-      real :: sd
-      real :: dd
-      real :: sdlat
-      real :: hlat 
-      real :: daylength
-      real :: rock
+      integer :: j = 0          !none          |counter            
+      integer :: l = 0          !none          |counter
+      real :: scmx = 0.         !mm/hr         |maximum soil hydraulic conductivity
+      real :: xx = 0.           !none          |variable to hold calculation result
+      real :: tsoil = 0.        !              | 
+      integer :: iob = 0        !              | 
+      integer :: iwst = 0       !              | 
+      integer :: iwgn = 0       !              | 
+      real :: sffc = 0.         !              | 
+      integer :: nly = 0        !none          |end of loop
+      integer :: k = 0          !none          |counter
+      integer :: ipl = 0        !none          |counter  
+      integer :: isdr = 0       !none          |conversion factor to convert kg/ha to g/t(ppm)
+      real :: sd = 0.
+      real :: dd = 0.
+      real :: sdlat = 0.
+      real :: hlat = 0.
+      real :: daylength = 0.
+      real :: rock = 0.
 
       do j = 1, sp_ob%hru
        ihru = j
@@ -101,7 +88,6 @@
       if (bsn_prm%ffcb <= 0.) then
        sffc = wgn_pms(iwgn)%pcp_an / (wgn_pms(iwgn)%pcp_an + Exp(9.043 -   &
                                      .002135 * wgn_pms(iwgn)%pcp_an))
-                         !!S-curve equation Jeff made up.
       else
         sffc = bsn_prm%ffcb
       end if

@@ -24,125 +24,116 @@
       use soil_module
       use organic_mineral_mass_module
       use carbon_module
+      use plant_module
       
       implicit none
 
-      integer :: j           !none          |HRU number
-      real :: xx             !kg N/ha       |amount of organic N in first soil layer
-      real :: wt1            !none          |conversion factor (mg/kg => kg/ha)
-      real :: er             !none          |enrichment ratio
-      real :: conc           !              |concentration of organic N in soil
-      real :: sol_mass       !              |  
-      real :: QBC                   !              |c loss with runoff or lateral flow
-      real :: VBC                   !              |c los with vertical flow
-      real :: YBC                   !              |BMC LOSS WITH SEDIMENT
-      real :: YOC                   !              |Organic C loss with sediment
-      real :: YW                    !              |YW = WIND EROSION (T/HA)
-      real :: TOT                   !              |Total organic carbon in layer 1
-      real :: YEW                   !frac          |fraction of soil erosion of total soil mass
-      real :: X1                    !              |
-      real :: PRMT_21               !              |KOC FOR CARBON LOSS IN WATER AND SEDIMENT(500._1500.) KD = KOC * C
-      real :: PRMT_44               !              |RATIO OF SOLUBLE C CONCENTRATION IN RUNOFF TO PERCOLATE(0.1_1.)
-      real :: DK                    !              |
-      real :: V                     !              |
-      real :: X3                    !              | 
-      real :: CO                    !              | 
-      real :: CS                    !              | 
-      real :: perc_clyr             !              | 
-      real :: latc_clyr             !              | 
-      integer :: k                  !none          |counter 
-      real :: xx1                   !              |
-      real :: sol_thick             !              |
-      real :: y1                    !              |
+      integer :: j = 0       !none          |HRU number
+      real :: xx = 0.        !kg N/ha       |amount of organic N in first soil layer
+      real :: wt1 = 0.       !none          |conversion factor (mg/kg => kg/ha)
+      real :: er = 0.        !none          |enrichment ratio
+      real :: conc = 0.      !              |concentration of organic N in soil
+      real :: sol_mass = 0.  !              |  
+      real :: QBC = 0.              !              |c loss with runoff or lateral flow
+      real :: VBC = 0.              !              |c los with vertical flow
+      real :: YBC = 0.              !              |BMC LOSS WITH SEDIMENT
+      real :: YOC = 0.              !              |Organic C loss with sediment
+      real :: YW = 0.               !              |YW = WIND EROSION (T/HA)
+      real :: TOT = 0.              !              |Total organic carbon in layer 1
+      real :: YEW = 0.              !frac          |fraction of soil erosion of total soil mass
+      real :: X1 = 0.               !              |
+      real :: PRMT_21 = 0.          !              |KOC FOR CARBON LOSS IN WATER AND SEDIMENT(500._1500.) KD = KOC * C
+      real :: PRMT_44 = 0.          !              |RATIO OF SOLUBLE C CONCENTRATION IN RUNOFF TO PERCOLATE(0.1_1.)
+      real :: DK = 0.               !              |
+      real :: V = 0.                !              |
+      real :: X3 = 0.               !              | 
+      real :: CO = 0.               !              | 
+      real :: CS = 0.               !              | 
+      real :: perc_clyr = 0.        !              | 
+      real :: latc_clyr = 0.        !              | 
+      integer :: k = 0              !none          |counter 
+      real :: xx1 = 0.              !              |
+      real :: sol_thick = 0.        !              |
+      real :: y1 = 0.               !              |
+      real :: c_ly1 = 0.
+      real :: ipl                   !              |counter for plant in the community
       
-      latc_clyr = 0.
-        
-      j = 0
       j = ihru
       
-      xx = 0.
-	  wt1 = 0.  !! conversion factor
-      er = 0.	!! enrichment ratio
-        !! HRU calculations
-        xx = rsd1(j)%str%n + rsd1(j)%meta%n + soil1(j)%hp(1)%n + soil1(j)%hs(1)%n
-        !wt = sol_bd(1,j) * sol_z(1,j) * 10. (tons/ha)
-        !wt1 = wt/1000
-        wt1 = soil(j)%phys(1)%bd * soil(j)%phys(1)%d / 100.
+      latc_clyr = 0.        
+      perc_clyr = 0.
+      wt1 = 0.  !! conversion factor
+      er = 0.   !! enrichment ratio
+      
+      !! total carbon in surface residue and soil humus
+      c_ly1 = soil1(j)%hp(1)%n + soil1(j)%hs(1)%n + soil1(j)%meta(1)%n + soil1(j)%str(1)%n
+      !! wt = sol_bd(1,j) * sol_z(1,j) * 10. (tons/ha) -> wt1 = wt/1000
+      wt1 = soil(j)%phys(1)%bd * soil(j)%phys(1)%d / 100.
 
-        if (hru(j)%hyd%erorgn > .001) then
-          er = hru(j)%hyd%erorgn
-        else
-          er = enratio
-        end if
+      if (hru(j)%hyd%erorgn > .001) then
+        er = hru(j)%hyd%erorgn
+      else
+        er = enratio
+      end if
 
-      conc = xx * er / wt1
+      conc = c_ly1 * er / wt1
 
-        !! HRU calculations
-        sedorgn(j) = .001 * conc * sedyld(j) / hru(j)%area_ha
+      !! organic n leaving hru
+      sedorgn(j) = .001 * conc * sedyld(j) / hru(j)%area_ha
 
-	!! update soil nitrogen pools only for HRU calculations
-      if (xx > 1.e-6) then
-        xx1 = (1. - sedorgn(j) / xx)
-        
-        !!add by zhang to update soil nitrogen pools
-        
-		rsd1(j)%str%n = rsd1(j)%str%n * xx1
-		rsd1(j)%meta%n = rsd1(j)%meta%n * xx1
-		soil1(j)%hp(1)%n = soil1(j)%hp(1)%n * xx1
-		soil1(j)%hs(1)%n = soil1(j)%hs(1)%n * xx1
-		!sol_BMN(1,j) = sol_BMN(1,j) * xx1
+      !! update soil carbon organic nitrogen pools
+      if (c_ly1 > 1.e-6) then
+        xx1 = (1. - sedorgn(j) / c_ly1)
+        soil1(j)%tot(1)%n = soil1(j)%tot(1)%n * xx1
+        soil1(j)%hs(1)%n = soil1(j)%hs(1)%n * xx1
+        soil1(j)%hp(1)%n = soil1(j)%hp(1)%n * xx1
+        soil1(j)%rsd(1)%n = soil1(j)%rsd(1)%n * xx1
+        soil1(j)%meta(1)%n = soil1(j)%meta(1)%n * xx1
+        soil1(j)%str(1)%n = soil1(j)%str(1)%n * xx1
+        soil1(j)%lig(1)%n = soil1(j)%lig(1)%n * xx1
       end if
       
-      !return
-      
-      !Calculate runoff and leached C&N from micro-biomass
+      !! Calculate runoff and leached C&N from microbial biomass
       latc_clyr = 0.
-      sol_mass = 0.  
-      !kg/ha
       sol_mass = (soil(j)%phys(1)%d / 1000.) * 10000. * soil(j)%phys(1)%bd * 1000. * (1- soil(j)%phys(1)%rock / 100.)
-      
       
       QBC=0.    !c loss with runoff or lateral flow
       VBC=0.    !c los with vertical flow
       YBC=0.    !BMC LOSS WITH SEDIMENT
       YOC=0.    !Organic C loss with sediment
       YW=0.     !YW = WIND EROSION (T/HA)
-      TOT = soil1(j)%hp(1)%c + soil1(j)%hs(1)%c + rsd1(j)%meta%c + rsd1(j)%str%c !Total organic carbon in layer 1
+      TOT = soil1(j)%hp(1)%c + soil1(j)%hs(1)%c + soil1(j)%meta(1)%c + soil1(j)%str(1)%c !Total organic carbon in layer 1
       !YEW = MIN(er*(sedyld(j)/hru(j)%area_ha+YW/hru(j)%area_ha)/(sol_mass/1000.),.9)
       ! Not sure whether should consider enrichment ratio or not!
       YEW = MIN((sedyld(j)/hru(j)%area_ha+YW/hru(j)%area_ha)/(sol_mass/1000.),.9) !fraction of soil erosion of total soil mass
-      X1=1.-YEW
-	  !YEW=MIN(ER*(YSD(NDRV)+YW)/WT(LD1),.9)
-	  !ER enrichment ratio
-	  !YSD water erosion
-	  !YW wind erosion
+      X1=1.- YEW
+      !YEW=MIN(ER*(YSD(NDRV)+YW)/WT(LD1),.9)
+      !ER enrichment ratio
+      !YSD water erosion
+      !YW wind erosion
       YOC=YEW*TOT
+      soil1(j)%tot(1)%c = soil1(j)%tot(1)%c * X1
       soil1(j)%hs(1)%c = soil1(j)%hs(1)%c * X1
       soil1(j)%hp(1)%c = soil1(j)%hp(1)%c * X1
-      rsd1(j)%str%m = rsd1(j)%str%m * X1
-      rsd1(j)%meta%m = rsd1(j)%meta%m * X1
-      rsd1(j)%lig%m = rsd1(j)%lig%m * X1
-      rsd1(j)%str%c = rsd1(j)%str%c * X1
-      rsd1(j)%meta%c = rsd1(j)%meta%c * X1
-      rsd1(j)%lig%c = rsd1(j)%lig%c * X1
-      rsd1(j)%lig%c = rsd1(j)%str%c - rsd1(j)%lig%c
-      if (surfq(j) > 0) then
-        !write(*,*) "stop"
-      end if
-      IF(soil1(j)%microb(1)%c > .01) THEN
+      soil1(j)%rsd(1)%c = soil1(j)%rsd(1)%c * X1
+      soil1(j)%str(1)%c = soil1(j)%str(1)%c * X1
+      soil1(j)%meta(1)%c = soil1(j)%meta(1)%c * X1
+      soil1(j)%lig(1)%c = soil1(j)%lig(1)%c * X1
+          
+        
+      if (soil1(j)%microb(1)%c > .01) then
           PRMT_21 = 0.  !KOC FOR CARBON LOSS IN WATER AND SEDIMENT(500._1500.) KD = KOC * C
           PRMT_21 = 1000.
-          soil1(j)%water(1)%c = rsd1(j)%str%c + rsd1(j)%meta%c + soil1(j)%hp(1)%c + soil1(j)%hs(1)%c + soil1(j)%microb(1)%c 
-          DK = .0001 * PRMT_21 * soil1(j)%water(1)%c
+          soil1(j)%tot(1)%c = soil1(j)%str(1)%c + soil1(j)%meta(1)%c + soil1(j)%hp(1)%c + soil1(j)%hs(1)%c + soil1(j)%microb(1)%c 
+          DK = .0001 * PRMT_21 * soil1(j)%tot(1)%c
           !X1=PO(LD1)-S15(LD1)
           X1 = soil(j)%phys(1)%por*soil(j)%phys(1)%d-soil(j)%phys(1)%wpmm !mm
           IF (X1 <= 0.) THEN
             X1 = 0.01
           END IF
           XX=X1+DK
-          !V=QD+Y4
           V = surfq(j) + soil(j)%ly(1)%prk + soil(j)%ly(1)%flat
-	      !QD surface runoff
+          !QD surface runoff
           X3=0.
           IF(V>1.E-10)THEN
               X3 = soil1(j)%microb(1)%c * (1.-EXP(-V/XX)) !loss of biomass C
@@ -162,19 +153,21 @@
       END IF
 
       soil1(j)%microb(1)%c = soil1(j)%microb(1)%c - YBC 
-      cbn_loss(j)%surfqc_d = QBC * (surfq(j) / (surfq(j) + soil(j)%ly(1)%flat + 1.e-6))
+      soil1(j)%tot(1)%c = soil1(j)%str(1)%c + soil1(j)%meta(1)%c + soil1(j)%hp(1)%c + soil1(j)%hs(1)%c + soil1(j)%microb(1)%c 
+      soil1(j)%seq(1)%c = 0.0
+      hsc_d(j)%surq_c = QBC * (surfq(j) / (surfq(j) + soil(j)%ly(1)%flat + 1.e-6))
        
       soil(j)%ly(1)%latc = QBC*(soil(j)%ly(1)%flat/(surfq(j)+soil(j)%ly(1)%flat+1.e-6))
       soil(j)%ly(1)%percc = VBC 
-      cbn_loss(j)%sedc_d = YOC + YBC
+      hsc_d(j)%sed_c = YOC + YBC
       
-      latc_clyr = latc_clyr + soil(j)%ly(1)%latc   
       do k = 2, soil(j)%nly
-          if (soil(j)%ly(k)%prk > 0 .and. k == soil(j)%nly) then
-          end if
+          ! if (soil(j)%ly(k)%prk > 0 .and. k == soil(j)%nly) then   ! commented out by FG because it doesn't do anything.
+          ! end if
           sol_thick = 0.
           sol_thick = soil(j)%phys(k)%d-soil(j)%phys(k-1)%d
-          soil1(j)%water(1)%c = soil1(j)%str(k)%c + soil1(j)%meta(k)%c + soil1(j)%hp(k)%c + soil1(j)%hs(k)%c 
+          ! soil1(j)%tot(1)%c = soil1(j)%hp(k)%c + soil1(j)%hs(k)%c 
+          ! soil1(j)%tot(k)%c = soil1(j)%hp(k)%c + soil1(j)%hs(k)%c  ! commented out by FG because is not needed here.
           Y1 = soil1(j)%microb(k)%c + VBC
           VBC=0.
           IF(Y1>=.01)THEN
@@ -185,15 +178,18 @@
           soil(j)%ly(k)%percc = VBC-soil(j)%ly(k)%latc
           soil1(j)%microb(k)%c = Y1 - VBC
 
-        !! calculate nitrate in percolate        
-        !perc_clyr = 0.
-        perc_clyr = perc_clyr + soil(j)%ly(k)%percc
-        
-        latc_clyr = latc_clyr + soil(j)%ly(k)%latc
+          !! calculate nitrate in percolate and lateral flow
+          if (k == soil(j)%nly) then
+            hsc_d(j)%perc_c = soil(j)%ly(k)%percc
+          end if
+          latc_clyr = latc_clyr + soil(j)%ly(k)%latc
+
+          soil1(j)%tot(k)%c = soil1(j)%str(k)%c + soil1(j)%meta(k)%c + soil1(j)%hp(k)%c + soil1(j)%hs(k)%c + soil1(j)%microb(k)%c 
+          soil1(j)%seq(k)%c = soil1(j)%hp(k)%c + soil1(j)%hs(k)%c + soil1(j)%microb(k)%c 
+
       end do
      
-        cbn_loss(j)%latc_d = latc_clyr
-        cbn_loss(j)%percc_d = perc_clyr
+      hsc_d(j)%latq_c = latc_clyr
 
       return
       end subroutine nut_orgnc2

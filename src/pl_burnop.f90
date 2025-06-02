@@ -1,4 +1,4 @@
-      subroutine pl_burnop (jj, iplant, iburn)
+      subroutine pl_burnop (jj, iburn)
       
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!    this subroutine performs all management operations             
@@ -13,20 +13,19 @@
       use basin_module
       use mgt_operations_module
       use organic_mineral_mass_module
-      use hru_module, only : cn2, ihru, ipl
+      use hru_module, only : cn2, ipl
       use soil_module
       use plant_module
       use carbon_module
       
       implicit none      
    
-      integer :: j                           !none          |counter
-      integer, intent (in) :: jj             !none          |counter
-      integer, intent (in) :: iplant         !              |plant number xwalked from hlt_db()%plant and plants.plt  
+      integer :: j = 0                       !none          |counter
+      integer, intent (in) :: jj             !none          |counter  
       integer, intent (in) :: iburn          !julian date   |date of burning
-      real :: cnop                           !              |updated cn after fire
-      real :: fr_burn                        !              |fraction burned
-      real :: pburn                          !              |amount of phosphorus that burns - removed from plant
+      real :: cnop = 0.                      !              |updated cn after fire
+      real :: fr_burn = 0.                   !              |fraction burned
+      real :: pburn = 0.                     !              |amount of phosphorus that burns - removed from plant
                                              !              |phosphorus and added to soil organic phosphorus 
 
       j = jj
@@ -35,34 +34,57 @@
       cnop = cn2(j) + fire_db(iburn)%cn2_upd
       call curno(cnop,j)
       
-      !!burn biomass and residue
-      fr_burn = fire_db(iburn)%fr_burn
-      pl_mass(j)%tot(ipl)%m = pl_mass(j)%tot(ipl)%m * fr_burn
-      pl_mass(j)%tot(ipl)%n = pl_mass(j)%tot(ipl)%n * fr_burn
-      pburn = pl_mass(j)%tot(ipl)%p * fr_burn
-      soil1(j)%hsta(1)%p = soil1(j)%hsta(1)%p + pburn
-      pl_mass(j)%tot(ipl)%p = pl_mass(j)%tot(ipl)%p - pburn
-      rsd1(j)%tot_com%m = rsd1(j)%tot_com%m * fr_burn
-      rsd1(j)%tot(1)%n = rsd1(j)%tot(1)%n * fr_burn
-      soil1(j)%hact(1)%n = soil1(j)%hact(1)%n * fr_burn
-      soil1(j)%hsta(1)%n = soil1(j)%hsta(1)%n* fr_burn
-
-      !!insert new biomss by zhang	  
-      !!=================================
-      if (bsn_cc%cswat == 2) then
-          rsd1(j)%meta%m = rsd1(j)%meta%m * fr_burn
-          rsd1(j)%str%m = rsd1(j)%str%m * fr_burn
-          rsd1(j)%str%c = rsd1(j)%str%c * fr_burn
-          rsd1(j)%str%n = rsd1(j)%str%n * fr_burn
-          rsd1(j)%meta%c = rsd1(j)%meta%c * fr_burn
-          rsd1(j)%meta%n = rsd1(j)%meta%n * fr_burn
-          rsd1(j)%lig%m = rsd1(j)%lig%m * fr_burn  
-
-          cbn_loss(j)%emitc_d = cbn_loss(j)%emitc_d + pl_mass(j)%tot(ipl)%m * (1. - fr_burn)
-          cbn_loss(j)%emitc_d = cbn_loss(j)%emitc_d + rsd1(j)%tot_com%m * (1. - fr_burn)  
-      end if 
-      !!insert new biomss by zhang
-      !!=================================
+      !! zero total community masses
+      pl_mass(j)%tot_com = plt_mass_z
+      pl_mass(j)%ab_gr_com = plt_mass_z
+      pl_mass(j)%leaf_com = plt_mass_z
+      pl_mass(j)%stem_com = plt_mass_z
+      pl_mass(j)%seed_com = plt_mass_z
+      
+      !!burn biomass and residue for each plant
+      do ipl = 1, pcom(j)%npl
+        
+        !! burn all above ground plant components
+        pl_burn = fire_db(iburn)%fr_burn * pl_mass(j)%ab_gr(ipl)
+        pl_mass(j)%ab_gr(ipl) = (1. - fire_db(iburn)%fr_burn) * pl_mass(j)%ab_gr(ipl)
+        pl_mass(j)%stem(ipl) = (1. - fire_db(iburn)%fr_burn) * pl_mass(j)%stem(ipl)
+        pl_mass(j)%leaf(ipl) = (1. - fire_db(iburn)%fr_burn) * pl_mass(j)%leaf(ipl)
+        pl_mass(j)%seed(ipl) = (1. - fire_db(iburn)%fr_burn) * pl_mass(j)%seed(ipl)
+        !! carbon in co2 emitted during burning
+        hrc_d(j)%emit_c = hrc_d(j)%emit_c + pl_burn%c
+        hpc_d(j)%emit_c = hpc_d(j)%emit_c + pl_burn%c
+        
+        !! burn all surface (layer 1) residue and humus components
+        if (bsn_cc%cswat == 1) then
+          !! const carbon (bsn_cc%cswat == 1)
+          pl_burn = fire_db(iburn)%fr_burn * (soil1(j)%hact(1) + soil1(j)%hsta(1))
+          soil1(j)%rsd(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%rsd(1)
+          soil1(j)%hact(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%hact(1)
+          soil1(j)%hsta(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%hsta(1)
+          !! add plant p burn to stable humus pool for constant carbon
+          soil1(j)%hsta(1)%p = soil1(j)%hsta(1)%p + pl_burn%p
+        else
+          !! dynamic carbon (bsn_cc%cswat == 2)
+          pl_burn = fire_db(iburn)%fr_burn * (soil1(j)%hs(1) + soil1(j)%hp(1) + soil1(j)%rsd(ipl))
+          soil1(j)%rsd(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%rsd(1)
+          soil1(j)%hs(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%hs(1)
+          soil1(j)%hp(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%hp(1)
+          soil1(j)%meta(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%meta(1)
+          soil1(j)%str(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%str(1)
+          soil1(j)%lig(1) = (1. - fire_db(iburn)%fr_burn) * soil1(j)%lig(1)
+          !! add plant p burn to stable humus pool for constant carbon
+          soil1(j)%hp(1)%p = soil1(j)%hp(1)%p + pl_burn%p
+        end if
+       
+        !! sum total community masses
+        pl_mass(j)%tot_com = pl_mass(j)%tot_com + pl_mass(j)%tot(ipl)
+        pl_mass(j)%ab_gr_com = pl_mass(j)%ab_gr_com + pl_mass(j)%ab_gr(ipl)
+        pl_mass(j)%leaf_com = pl_mass(j)%leaf_com + pl_mass(j)%leaf(ipl)
+        pl_mass(j)%stem_com = pl_mass(j)%stem_com + pl_mass(j)%stem(ipl)
+        pl_mass(j)%seed_com = pl_mass(j)%seed_com + pl_mass(j)%seed(ipl)
+        
+       
+      end do     ! npl loop
 
       return
       end subroutine pl_burnop

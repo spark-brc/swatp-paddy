@@ -1,11 +1,12 @@
         subroutine cbn_zhang2
     
-        use hru_module, only : ihru, tillage_days, tillage_depth, tillage_factor, tillage_switch, ipl
+        use hru_module, only : ihru, tillage_days, tillage_depth, tillage_factor, tillage_switch
         use soil_module
         use basin_module
         use organic_mineral_mass_module
         use carbon_module
         use output_landscape_module
+        use time_module, only : time
         
         implicit none
         
@@ -94,125 +95,93 @@
                 !of structural litter [xlslf = exp(-3* lslf) (parton et al., 1993, 1994)]
        !prmt_51 !coef adjusts microbial activity function in top soil layer (0.1_1.)
        
-       integer :: j              !                     |number of hru
-       integer :: k              !none                 |counter
-       integer :: kk             !                     |
-       integer :: lmnta          !                     |      
-       integer :: min_n_ppm      !                     |
-       integer :: lslncat        !                     |
-       integer :: min_n          !                     |
-       real :: sol_mass          !                     |
-       real :: sol_min_n         !                     |
-       real :: fc                !mm H2O               |amount of water available to plants in soil layer at field capacity (fc - wp),Index:(layer,HRU)
-       real :: wc                !none                 |scaling factor for soil water impact on daily
-       real :: sat               !                     |
-       real :: void              !                     |
-       real :: sut               !                     |soil water control on biological processes
-       real :: cdg               !                     |soil temperature control on biological processes
-       real :: ox                !                     |oxygen control on biological processes with soil depth
-       real :: cs                !                     |combined factor controlling biological processes [cs = sqrt(cdg�sut)* 0.8*ox*x1), cs < 10; cs = 10, cs>=10 (williams, 1995)]
-       real :: x1                !none                 |tillage control on residue decomposition (not used)
-       real :: x3                !none                 |amount of c transformed from passive, slow, metabolic, and non-lignin structural pools to microbial pool
-       real :: lmf               !frac                 |fraction of the litter that is metabolic 
-       real :: lsf               !frac                 |fraction of the litter that is structural
-       real :: lslf              !kg kg-1              |fraction of structural litter that is lignin 
-       real :: xlslf             !                     |control on potential transformation of structural litter by lignin fraction
-       real :: lsr               !                     |
-       real :: lscta             !                     |
-       real :: lslcta            !                     |
-       real :: lslncta           !                     |
-       real :: lsnta             !                     |
-       real :: lmcta             !                     |
-       real :: lsctp             !kg ha-1 day-1        |potential transformation of C in structural litter
-       real :: lslctp            !kg ha-1 day-1        |potential transformation of C in lignin of structural litter
-       real :: lslnctp           !kg ha-1 day-1        |potential transformation of C in nonlignin structural litter
-       real :: lsntp             !kg ha-1 day-1        |potential transformation of N in structural litter			  
-       real :: lmr               !                     |
-       real :: lmctp             !kg ha-1 day-1        |potential transformation of C in metabolic litter
-       real :: lmntp             !kg ha-1 day-1        |potential transformation of N in metabolic litter	
-       real :: bmctp             !kg ha-1 day-1        |potential transformation of C in microbial biomass
-       real :: hsctp             !kg ha-1 day-1        |potential transformation of C in slow humus
-       real :: hsntp             !kg ha-1 day-1        |potential transformation of N in slow humus
-       real :: hpctp             !kg ha-1 day-1        |potential transformation of C in passive humus 
-       real :: hpntp             !kg ha-1 day-1        |potential transformation of N in passive humus
-       real :: nchp              !                     |n/c ratio of passive humus
-       real :: nf                !                     |
-       real :: ncbm              !                     |n/c ratio of biomass
-       real :: nchs              !                     |n/c ration of slow humus
-       real :: alslco2           !                     |Fraction of decomposed lignin of structural litter allocated to CO2
-       real :: alslnco2          !                     |Fraction of decomposed lignin of structural litter allocated to CO2
-       real :: almco2            !                     |Fraction of decomposed metabolic litter allocated to CO2 
-       real :: abco2             !                     |Fraction of decomposed microbial biomass allocated to CO2
-       real :: a1co2             !                     |
-       real :: apco2             !                     |Fraction of decomposed  passive humus allocated to CO2
-       real :: asco2             !                     |Fraction of decomposed slow humus allocated to CO2 
-       real :: abp               !                     |Fraction of decomposed microbial biomass allocated to passive humus
-       real :: asp               !                     |Fraction of decomposed slow humus allocated to passive
-       real :: a1                !                     |
-       real :: asx               !                     |
-       real :: apx               !                     |
-       real :: df1               !                     |
-       real :: df2               !                     |
-       real :: snmn              !
-       real :: df3               !                     |
-       real :: df4               !                     |
-       real :: df5               !                     |
-       real :: df6               !                     |
-       real :: add               !                     |
-       real :: adf1              !                     |
-       real :: adf2              !                     |
-       real :: adf3              !                     |
-       real :: adf4              !                     |
-       real :: adf5              !                     |
-       real :: tot               !                     |
-       real :: pn1               !                     |
-       real :: pn2               !                     |
-       real :: pn3               !                     |
-       real :: pn4               !                     |
-       real :: pn5               !                     |
-       real :: pn6               !                     |
-       real :: pn7               !                     |
-       real :: pn8               !                     |
-       real :: pn9               !                     |
-       real :: cpn1              !                     |
-       real :: cpn2              !                     |
-       real :: cpn3              !                     |
-       real :: cpn4              !                     |
-       real :: cpn5              !                     |
-       real :: wmin              !                     |
-       real :: dmdn              !                     |
-       real :: wdn               !kg N/ha              |amount of nitrogen lost from nitrate pool in
-       real :: deltawn           !                     |
-       real :: deltabmc          !                     |
-       real :: snta              !                     |
-       real :: till_eff          !                     |
-       real :: rlr               !                     |
-       real :: xbm               !                     |
-       real :: bmcta             !                     |
-       real :: bmnta             !                     |
-       real :: hscta             !                     |
-       real :: hsnta             !                     |
-       real :: hpcta             !                     |
-       real :: hpnta             !                     |
+       integer :: j = 0          !                     |number of hru
+       integer :: k = 0          !none                 |counte
+       integer :: kk = 0         !                     |
+       integer :: lmnta = 0      !                     |      
+       integer :: min_n_ppm = 0  !                     |
+       integer :: lslncat = 0    !                     |
+       integer :: min_n = 0      !                     |
+       real :: sol_mass = 0.     !                     |
+       real :: sol_min_n = 0.    !                     |
+       real :: fc = 0.           !mm H2O               |amount of water available to plants in soil layer at field capacity (fc - wp),Index:(layer,HRU)
+       real :: wc = 0.           !none                 |scaling factor for soil water impact on daily
+       real :: sat = 0.          !                     |
+       real :: void = 0.         !                     |
+       real :: cdg = 0.          !                     |soil temperature control on biological processes
+       real :: x3 = 0.           !none                 |amount of c transformed from passive, slow, metabolic, and non-lignin structural pools to microbial pool
+       real :: lscta = 0.        !                     |
+       real :: lslcta = 0.       !                     |
+       real :: lslncta = 0.      !                     |
+       real :: lsnta = 0.        !                     |
+       real :: lmcta = 0.        !                     |
+       real :: nf = 0.           !                     |
+       real :: a1 = 0.           !                     |
+       real :: asx = 0.          !                     |
+       real :: apx = 0.          !                     |
+       real :: a1co2 = 0.        !                     |
+       real :: df1 = 0.          !                     |
+       real :: df2 = 0.          !                     |
+       real :: snmn = 0.         !
+       real :: df3 = 0.          !                     |
+       real :: df4 = 0.          !                     |
+       real :: df5 = 0.          !                     |
+       real :: df6 = 0.          !                     |
+       real :: add = 0.          !                     |
+       real :: adf1 = 0.         !                     |
+       real :: adf2 = 0.         !                     |
+       real :: adf3 = 0.         !                     |
+       real :: adf4 = 0.         !                     |
+       real :: adf5 = 0.         !                     |
+       real :: tot = 0.          !                     |
+       real :: pn1 = 0.          !                     |
+       real :: pn2 = 0.          !                     |
+       real :: pn3 = 0.          !                     |
+       real :: pn4 = 0.          !                     |
+       real :: pn5 = 0.          !                     |
+       real :: pn6 = 0.          !                     |
+       real :: pn7 = 0.          !                     |
+       real :: pn8 = 0.          !                     |
+       real :: pn9 = 0.          !                     |
+       real :: cpn1 = 0.         !                     |
+       real :: cpn2 = 0.         !                     |
+       real :: cpn3 = 0.         !                     |
+       real :: cpn4 = 0.         !                     |
+       real :: cpn5 = 0.         !                     |
+       real :: wmin = 0.         !                     |
+       real :: dmdn = 0.         !                     |
+       real :: wdn = 0.          !kg N/ha              |amount of nitrogen lost from nitrate pool in
+       real :: deltawn = 0.      !                     |
+       real :: deltabmc = 0.     !                     |
+       real :: snta = 0.         !                     |
+       real :: till_eff = 0.     !                     |
+       real :: rlr = 0.          !                     |
+       real :: xbm = 0.          !                     |
+       real :: bmcta = 0.        !                     |
+       real :: bmnta = 0.        !                     |
+       real :: hscta = 0.        !                     |
+       real :: hsnta = 0.        !                     |
+       real :: hpcta = 0.        !                     |
+       real :: hpnta = 0.        !                     |
        real :: fcgd              !                     |
-       real :: rsdn_pct          !                     |
-       real :: sum               !                     |
-       real :: sum1              !                     |potential n supply resulting from the transformation of structural litter; calc as lsntp-(pn1+pn2) if lsntp > (pn1+pn2), otherwise = 0 (kg n ha-1 day-1)
-       real :: sum2              !                     |
-       real :: sum3              !                     |
-       real :: sum4              !                     |
-       real :: sum5              !                     |
-       real :: reduc             !none                 |fraction of water uptake by plants achieved
-       real :: rnmn              !                     |
-       real :: hmp_rate          !                     |
-       real :: hmp               !kg P/ha              |amount of phosphorus moving from the organic
-       real :: decr              !                     |
-       real :: rmp               !kg P/ha              |amount of phosphorus moving from fresh organic
-       real :: rto               !none                 |cloud cover factor
-       real :: rspc              !                     |
-       real :: xx                !varies    |variable to hold calculation results
-       character(len=10) :: ch4module    !varies    | methane module type  !spark  
-       
+       real :: rsdn_pct = 0.     !                     |
+       real :: sum = 0.          !                     |
+       real :: sum1 = 0.         !                     |potential n supply resulting from the transformation of structural litter; calc as lsntp-(pn1+pn2) if lsntp > (pn1+pn2), otherwise = 0 (kg n ha-1 day-1)
+       real :: sum2 = 0.         !                     |
+       real :: sum3 = 0.         !                     |
+       real :: sum4 = 0.         !                     |
+       real :: sum5 = 0.         !                     |
+       real :: reduc = 0.        !none                 |fraction of water uptake by plants achieved
+       real :: rnmn = 0.         !                     |
+       real :: hmp_rate = 0.     !                     |
+       real :: hmp = 0.          !kg P/ha              |amount of phosphorus moving from the organic
+       real :: decr = 0.         !                     |
+       real :: rmp = 0.          !kg P/ha              |amount of phosphorus moving from fresh organic
+       real :: rto = 0.          !none                 |cloud cover factor
+       real :: rspc = 0.         !                     |
+       real :: xx = 0.           !varies    |variable to hold calculation results
+
+
        !! initialize local variables
        deltawn = 0.
        deltabmc = 0.   
@@ -310,24 +279,25 @@
        dmdn = 0.
 
        j = ihru
+       hrc_d(j)%rsd_surfdecay_c = 0.
+       hrc_d(j)%rsd_rootdecay_c = 0.
+       
         
       !calculate tillage factor using dssat
-      if (tillage_switch(j) .eq. 1 .and. tillage_days(j) .le. 30) then
-         tillage_factor(j) = 1.6
-      else
-         tillage_factor(j) = 1.0
-      end if	
+      ! The following is commented out because it is not used. FG
+      ! if (tillage_switch(j) .eq. 1 .and. tillage_days(j) .le. 30) then
+      !    tillage_factor(j) = 1.6
+      ! else
+      !    tillage_factor(j) = 1.0
+      ! end if	
 
       !!calculate c/n dynamics for each soil layer
       !!===========================================
+      soil1(j)%org_flx_tot = org_flux_zero
       do k = 1, soil(j)%nly
-        if (k == 1) then
-          !10 cm / 1000 = 0.01m; 1 ha = 10000 m2; ton/m3; * 1000 --> final unit is kg/ha; rock fraction is considered
-          sol_mass = (10) / 1000.* 10000. * soil(j)%phys(k)%bd * 1000. * (1. - soil(j)%phys(k)%rock / 100.)            
-        else
-          sol_mass = (soil(j)%phys(k)%d - soil(j)%phys(k-1)%d) / 1000. * 10000. * soil(j)%phys(k)%bd * 1000. * &
-                    (1- soil(j)%phys(k)%rock / 100.)
-        end if        
+        !! mm / 1000 * 10000 m2 / ha * ton/m3 * 1000 kg/ha -> kg/ha; rock fraction is considered
+        sol_mass = 10000. * soil(j)%phys(k)%thick * soil(j)%phys(k)%bd * (1 - soil(j)%phys(k)%rock / 100.)
+      
          
         ! if k = 1, then using temperature, soil moisture in layer 2 to calculate decomposition factor
         if (k == 1) then
@@ -355,21 +325,40 @@
  
           !compute tillage factor (till_eff) from armen
           till_eff = 1.0
-          
-          !calculate tillage factor using dssat
-          if (tillage_switch(j) .eq. 1 .and. tillage_days(j) .le. 30) then
-            if (k == 1) then
-              till_eff = 1.6
-            else
-              if (soil(j)%phys(k)%d .le. tillage_depth(j)) then
-                till_eff = 1.6
-              else if (soil(j)%phys(k-1)%d .lt. tillage_depth(j)) then
-                till_eff = 1.0 + 0.6 * (tillage_depth(j) - soil(j)%phys(k-1)%d) / (soil(j)%phys(k)%d - soil(j)%phys(k-1)%d)
-              end if		         
-            end if
-          else
-            till_eff = 1.0
-          end if	
+
+          select case (bsn_cc%idc_till)
+
+            case(1)
+              !calculate tillage factor using dssat
+              if (tillage_switch(j) .eq. 1 .and. tillage_days(j) .le. 30) then
+                if (k == 1) then
+                  till_eff = 1.6
+                else
+                  if (soil(j)%phys(k)%d .le. tillage_depth(j)) then
+                    till_eff = 1.6
+                  else if (soil(j)%phys(k-1)%d .lt. tillage_depth(j)) then
+                    till_eff = 1.0 + 0.6 * (tillage_depth(j) - soil(j)%phys(k-1)%d) / (soil(j)%phys(k)%d - soil(j)%phys(k-1)%d)
+                  end if		         
+                end if
+              else
+                till_eff = 1.0
+              end if	
+            
+            case(2)
+              ! place holder for epic method to compute till_eff
+
+            case(3)
+              if (tillage_switch(j) .eq. 1 .and. tillage_days(j) .le. 30) then
+                ! Kemanian method    ----having modi
+                till_eff = 1. + soil(j)%ly(k)%tillagef 
+              else
+                till_eff = 1.0
+              endif
+
+            case(4)
+              ! place holder for dndc method
+
+          end select
 
           !!compute soil temperature factor - when sol_tep is larger than 35, cdg is negative?
           org_con%cdg = soil(j)%phys(k)%tmp / (soil(j)%phys(k)%tmp + exp(5.058459 - 0.2503591 * soil(j)%phys(k)%tmp))
@@ -383,14 +372,21 @@
           org_con%cs = min(10., sqrt(org_con%cdg * org_con%sut) * 0.9* org_con%ox * till_eff) 
           
           !! call denitrification (to use void and cdg factor)
-          wdn = 0.
-          org_con%cdg = fcgd(soil(j)%phys(k)%tmp)
-          if (org_con%cdg > 0. .and. void <= 0.1) then
-            call nut_denit(k, j, org_con%cdg, wdn, void)
-          end if
+          !wdn = 0.
+          !org_con%cdg = fcgd(soil(j)%phys(k)%tmp)
+          !if (org_con%cdg > 0. .and. void <= 0.1) then
+          !  call nut_denit(k, j, org_con%cdg, wdn, void)
+          !end if
+          
+          if (org_con%sut >= bsn_prm%sdnco) then
+            wdn = soil1(j)%mn(k)%no3 * (1.-Exp(-bsn_prm%cdn * org_con%cdg * soil1(j)%cbn(k) / 100.))
+          else
+            wdn = 0.
+          endif
+          soil1(j)%mn(k)%no3 = max(0.0001,soil1(j)%mn(k)%no3 - wdn)
           hnb_d(j)%denit = hnb_d(j)%denit + wdn
-
           sol_min_n = soil1(j)%mn(k)%no3 + soil1(j)%mn(k)%nh4
+          ! print*, "1. in cbn_zhang2", k, soil1(j)%mn(k)%no3
               
           !lignin content in structural litter (fraction)          
           rlr = min(0.8, soil1(j)%lig(k)%m / (soil1(j)%str(k)%m + 1.e-5))  
@@ -403,16 +399,17 @@
 
           ! set nitrogen carbon ratios for upper layer
           if (k == 1) then
-            org_con%cs = org_con%cs * carbdb%microb_top_rate
             org_allo%abco2 = .55
             a1co2 = .55
+            carbdb%microb_top_rate = .0164
             carbdb%microb_rate = .0164
             carbdb%meta_rate = .0405
             carbdb%str_rate = .0107
             org_ratio%nchp = .1
             xbm = 1.
+            org_con%cs = org_con%cs * carbdb%microb_top_rate
             ! compute n/c ratios - relative nitrogen content in residue
-            rsdn_pct = 0.1 * (rsd1(j)%str%n + rsd1(j)%meta%n) / (rsd1(j)%tot_com%m / 1000. + 1.e-5)
+            rsdn_pct = 0.1 * (soil1(j)%rsd(1)%n + soil1(j)%meta(1)%n) / (soil1(j)%rsd(1)%c / 1000. + 1.e-5)
             if (rsdn_pct > 2.) then
               org_ratio%ncbm = .1
               org_ratio%nchs = org_ratio%ncbm / (5. * org_ratio%ncbm + 1.)
@@ -655,14 +652,15 @@
               
         !     update
               if (rnmn > 0.) then
-                  soil1(j)%mn(k)%nh4 = soil1(j)%mn(k)%nh4 + rnmn     
-	          min_n = soil1(j)%mn(k)%no3 + rnmn
-	            if (min_n < 0.) then
-	              rnmn = -soil1(j)%mn(k)%no3
-	              soil1(j)%mn(k)%no3 = 1.e-10
-	            else
-	              soil1(j)%mn(k)%no3 = min_n
+                soil1(j)%mn(k)%nh4 = soil1(j)%mn(k)%nh4 + rnmn     
+                min_n = soil1(j)%mn(k)%no3 + rnmn
+                if (min_n < 0.) then
+                  rnmn = -soil1(j)%mn(k)%no3
+                  soil1(j)%mn(k)%no3 = 1.e-10
+                else
+                  soil1(j)%mn(k)%no3 = min_n
                 end if   
+                ! print*, "2. in cbn_zhang2", k, soil1(j)%mn(k)%no3, rnmn
               end if
               
 	          ! calculate p flows
@@ -749,7 +747,7 @@
               !!!=================================
               !!transformation processes from lignin structural (str) and metabolic (met) and  pools to s2 (slow humus)
 
-                      !!str (structrual litter) to s2 (slow humus)
+                      !!str (structural litter) to s2 (slow humus)
                       org_flux%cfstrs2 = .7 * lslcta              
                       call nut_np_flow (&
                              soil1(j)%str(k)%c, soil1(j)%str(k)%n,       & !input
@@ -864,16 +862,25 @@
                 soil1(j)%meta(k)%m = soil1(j)%meta(k)%m - lmcta / rto
                 soil1(j)%meta(k)%c = soil1(j)%meta(k)%c - lmcta
               end if
-              !soil1(j)%meta(k)%c=max(1.e-10,soil1(j)%meta(k)%c-lmcta)
-              !soil1(j)%meta(k)%m=max(1.e-10,soil1(j)%meta(k)%m-lmcta/.42)              
+              
+              !! set residue decomposition for printing
+              if (k == 1) then
+                !! surface residue
+                hrc_d(j)%rsd_surfdecay_c = lmcta + lscta
+                ! soil1(j)%rsd(1)%c = soil1(j)%rsd(1)%c - hrc_d(j)%rsd_surfdecay_c
+              else
+                !! subsurface and root residue
+                hrc_d(j)%rsd_rootdecay_c = lmcta + lscta
+                ! soil1(j)%rsd(k)%c = soil1(j)%rsd(k)%c - hrc_d(j)%rsd_rootdecay_c
+              end if 
               
               soil1(j)%meta(k)%n = max(.001, soil1(j)%meta(k)%n - org_flux%efmets1 & !subtract n flow from met (metabolic litter) to s1 (microbial biomass)
                             - org_flux%mnrmets1)                    !subtract n immobilization during transformaiton from met (metabolic litter) to s1 (microbial biomass)
 
               soil1(j)%str(k)%n = max(.001, soil1(j)%str(k)%n - org_flux%efstrs1 & !subtract n flow from str (structural litter) to s1 (microbial biomass)
                             - org_flux%efstrs2                     &!subtract n flow from str (structural litter) to s2 (slow humus)
-                            - org_flux%mnrstrs1                    &!subtract mineralization during tansformation from str (structural litter) to s1 (microbial biomass)
-                            - org_flux%mnrstrs2)                    !subtract mineralization during tansformation from str (structural litter) to s2 (slow humus)
+                            - org_flux%mnrstrs1                    &!subtract mineralization during transformation from str (structural litter) to s1 (microbial biomass)
+                            - org_flux%mnrstrs2)                    !subtract mineralization during transformation from str (structural litter) to s2 (slow humus)
 
               soil1(j)%microb(k)%n = soil1(j)%microb(k)%n + org_flux%efmets1         & !add n flow from met (metabolic litter) to s1 (microbial biomass)
                     + org_flux%efstrs1                            & !add n flow from str (structural litter) to s1 (microbial biomass)
@@ -881,8 +888,8 @@
                     - org_flux%efs1s3                             & !subtract n flow from s1 (microbial biomass) to s3 (passive humus)
                     + org_flux%efs2s1                             & !add n flow from s2 (slow humus) to  s1 (microbial biomass)
                     + org_flux%efs3s1                             & !add n flow from s3 (passive humus) to s1 (microbial biomass)                  
-                    - org_flux%mnrs1s2                            & !subtract mineralization during tansformation from s1 (microbial biomass) to s2 (slow humus)
-                    - org_flux%mnrs1s3                            & !subtract mineralization during tansformation from s1 (microbial biomass) to s3 (passive humus)                   
+                    - org_flux%mnrs1s2                            & !subtract mineralization during transformation from s1 (microbial biomass) to s2 (slow humus)
+                    - org_flux%mnrs1s3                            & !subtract mineralization during transformation from s1 (microbial biomass) to s3 (passive humus)                   
                     + org_flux%immmets1                           & !add immobilization during transformaiton from met (metabolic litter) to s1 (microbial biomass)
                     + org_flux%immstrs1                           & !add immobilization during transformaiton from str (structural litter) to s1 (microbial biomass)
                     + org_flux%imms2s1                            & !add immobilization during transformaiton from s2 (slow humus) to  s1 (microbial biomass)
@@ -892,17 +899,17 @@
                     org_flux%efs1s2                               & !add n flow from s1 (microbial biomass) to s2 (slow humus)
                     - org_flux%efs2s1                             & !subtract n flow from s2 (slow humus) to  s1 (microbial biomass)
                     - org_flux%efs2s3                             & ! subtract n flow from s2 (slow humus) to  s3 (passive humus)                  
-                    - org_flux%mnrs2s1                            & !subtract mineralization during tansformation from s2 (slow humus) to  s1 (microbial biomass)
-                    - org_flux%mnrs2s3                            & !subtract mineralization during tansformation from s2 (slow humus) to  s3 (passive humus)                   
-                    + org_flux%immstrs2                           & !add immobilization during tansformation from str (structural litter) to s2 (slow humus)
-                    + org_flux%imms1s2                              !add immobilization during tansformation from s1 (microbial biomass) to s2 (slow humus)
+                    - org_flux%mnrs2s1                            & !subtract mineralization during transformation from s2 (slow humus) to  s1 (microbial biomass)
+                    - org_flux%mnrs2s3                            & !subtract mineralization during transformation from s2 (slow humus) to  s3 (passive humus)                   
+                    + org_flux%immstrs2                           & !add immobilization during transformation from str (structural litter) to s2 (slow humus)
+                    + org_flux%imms1s2                              !add immobilization during transformation from s1 (microbial biomass) to s2 (slow humus)
               
               soil1(j)%hp(k)%n = soil1(j)%hp(k)%n + org_flux%efs1s3 +        & !add n flow from s1 (microbial biomass) to s3 (passive humus)
                     org_flux%efs2s3                               & !add n flow from s2 (slow humus) to s3 (passive humus)                   
                     - org_flux%efs3s1                             & !subtract n flow from s3 (passive humus) to s1 (microbial biomass)
                     - org_flux%mnrs3s1                            & !subtract mineralization.
-                    + org_flux%imms1s3                            & !add immobilization during tansformation from s1 (microbial biomass) to s3 (passive humus)
-                    + org_flux%imms2s3                              !add immobilization during tansformation from s2 (slow humus) to s3 (passive humus)
+                    + org_flux%imms1s3                            & !add immobilization during transformation from s1 (microbial biomass) to s3 (passive humus)
+                    + org_flux%imms2s3                              !add immobilization during transformation from s2 (slow humus) to s3 (passive humus)
               
               !!update soil respiration
               !!===============================
@@ -910,27 +917,24 @@
               rspc = .3 * lslcta + a1co2 * (lslncta + lmcta) + org_allo%abco2 * bmcta + org_allo%asco2 * hscta + &
                 org_allo%apco2 * hpcta
               !!rspc_da is accounting variable summarizing co2 emissions from all soil layers
-              cbn_loss(j)%rspc_d = cbn_loss(j)%rspc_d +  rspc 
+              hsc_d(j)%rsp_c = hsc_d(j)%rsp_c +  rspc 
               
-              !!update other vairables used in swat
+              ! Save the the org_flux for each layer and a total per day
+              soil1(j)%org_flx_lr(k) = org_flux     
+              soil1(j)%org_flx_tot = soil1(j)%org_flx_tot + soil1(j)%org_flx_lr(k) 
+              
+              !!update other variables used in swat
               !!==================================
-              soil1(j)%tot(k)%m = soil1(j)%str(k)%m + soil1(j)%meta(k)%m            
-              soil1(j)%tot(k)%c = 100. * (soil1(j)%hs(k)%c + soil1(j)%hp(k)%c + soil1(j)%microb(k)%c) / sol_mass 
-              
-              !! ================================================================= !spark
-              ch4module = 'daycent'
-              select case (trim(ch4module))
-                case ('daycent')
-                  call ch4_daycent(k)
-                case ('dndc')
-                  call ch4_dndc(k)
-                case ("meres")
-                  call ch4_meres(k)
-              end select
-              !! ================================================================= !spark                      
-              
-              
-              
+              !soil1(j)%tot(k)%m = soil1(j)%str(k)%m + soil1(j)%meta(k)%m
+              !soil1(j)%tot(k)%c = 100. * (soil1(j)%hs(k)%c + soil1(j)%hp(k)%c + soil1(j)%microb(k)%c) / sol_mass 
+              ! soil1(j)%tot(k)%c = soil1(j)%hs(k)%c + soil1(j)%hp(k)%c + soil1(j)%microb(k)%c
+              soil1(j)%tot(k)%c = soil1(j)%str(k)%c + soil1(j)%meta(k)%c + soil1(j)%hp(k)%c + soil1(j)%hs(k)%c + soil1(j)%microb(k)%c 
+              if (k == 1 ) then
+                soil1(j)%seq(k)%c = 0.0
+              else
+                soil1(j)%seq(k)%c = soil1(j)%hp(k)%c + soil1(j)%hs(k)%c + soil1(j)%microb(k)%c 
+              endif
+
         end if  !soil temp and soil water > 0.
 
       end do      !soil layer loop

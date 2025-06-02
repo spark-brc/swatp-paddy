@@ -23,41 +23,39 @@
 
       integer, intent (in)  :: ob_cur         !          |
       integer, intent (in)  :: idtbl          !none      |
-      integer :: ob_num                       !          |object number   
-      integer :: nbz = 748932582              !          |
-      integer, dimension(1) :: seed = (/3/)   !          |
-      integer :: ic                           !none      |counter
-      integer :: ialt                         !none      |counter
-      integer :: iac                          !none      |counter
-      integer :: iob                          !          |
-      real :: targ_val                        !          |
-      real :: ran_num                         !          |
+      integer :: ob_num = 0                   !          |object number   
+      integer :: ic = 0                       !none      |counter
+      integer :: ialt = 0                     !none      |counter
+      integer :: iac = 0                      !none      |counter
+      integer :: iob = 0                      !          |
+      real :: targ_val = 0.                   !          |
+      real :: ran_num = 0.                    !          |
       real :: aunif                           !          |
-      integer :: ires                         !          |
-      integer :: ipl                          !          |
-      integer :: iipl                         !          |
-      integer :: id                           !          |
-      integer :: isched                       !          |
-      integer :: iauto                        !          |
-      integer :: ivar_cur 
-      integer :: ivar_tbl
-      real :: targ                            !          |
-      integer :: pl_sum                       !none      |number of plants growing
-      integer :: days_tot                     !none      |
-      integer :: iwgn                         !units     |
-      integer :: ly                           !units     |soil layer
-      real :: strs_sum                        !none      |sum of stress (water or n) of all growing plants
-      real :: prob_cum                        !          |
-      real :: prob_apply                      !          |
-      real :: hru_exp_left                    !          |number of hru's expected to still be applied (uniform or normal distr)
-      real :: hru_act_left                    !          |number of hru's actually still to be applied
-      real :: flo_m3
-      real :: wt_tot
-      real :: p_lab_tot
-      real :: p_lab_ppm
-      real :: rto
-      real :: var_cur
-      character(len=1) :: pl_chk
+      integer :: ires = 0                     !          |
+      integer :: ipl = 0                      !          |
+      integer :: iipl = 0                     !          |
+      integer :: id = 0                       !          |
+      integer :: isched = 0                   !          |
+      integer :: iauto = 0                    !          |
+      integer :: ivar_cur = 0
+      integer :: ivar_tbl = 0
+      real :: targ = 0.                       !          |
+      integer :: pl_sum = 0                   !none      |number of plants growing
+      integer :: days_tot = 0                 !none      |
+      integer :: iwgn = 0                     !units     |
+      integer :: ly = 0                       !units     |soil layer
+      real :: strs_sum = 0.                   !none      |sum of stress (water or n) of all growing plants
+      real :: prob_cum = 0.                   !          |
+      real :: prob_apply = 0.                 !          |
+      real :: hru_exp_left = 0.               !          |number of hru's expected to still be applied (uniform or normal distr)
+      real :: hru_act_left = 0.               !          |number of hru's actually still to be applied
+      real :: flo_m3 = 0.
+      real :: wt_tot = 0.
+      real :: p_lab_tot = 0.
+      real :: p_lab_ppm = 0.
+      real :: rto = 0.
+      real :: var_cur = 0.
+      character(len=1) :: pl_chk = ""
       
       d_tbl%act_hit = "y"
       do ic = 1, d_tbl%conds
@@ -193,7 +191,7 @@
           ipl = Max (Int(d_tbl%cond(ic)%lim_const), 1)
           do ialt = 1, d_tbl%alts
             if (d_tbl%alt(ic,ialt) == "=") then    !determine if growing (y) or not (n)
-              if (pcom(ob_num)%plcur(ipl)%gro /= d_tbl%cond(ic)%lim_var) then
+              if (pcom(ob_num)%plcur(ipl)%gro == "n") then
                 d_tbl%act_hit(ialt) = "n"
               end if
             end if
@@ -230,7 +228,7 @@
           
           ivar_cur = pcom(ob_num)%days_plant
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
                                    
         !days since last harvest
         case ("days_harv")
@@ -239,7 +237,16 @@
           
           ivar_cur = pcom(ob_num)%days_harv
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
+                                         
+        !days since last irrigation
+        case ("days_irr")
+          ob_num = d_tbl%cond(ic)%ob_num
+          if (ob_num == 0) ob_num = ob_cur
+          
+          ivar_cur = pcom(ob_num)%days_irr
+          ivar_tbl = int(d_tbl%cond(ic)%lim_const)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
                                          
         !days since last action
         case ("days_act")
@@ -249,13 +256,13 @@
           iac = d_tbl%con_act(ic)
           ivar_cur = pcom(ob_num)%dtbl(idtbl)%days_act(iac)
           ivar_tbl = int(d_tbl%cond(ic)%lim_const) + 2
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
           
         !days since first simulation day of year
         case ("day_start")
           ivar_cur = time%day_start 
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
                                            
         !slope
         case ("slope")
@@ -298,14 +305,13 @@
         case ("jday")
           ivar_cur = time%day 
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
 
         !month
         case ("month")
-          ivar_cur = time%mo
-          var_cur = ivar_cur + float (time%day_mo) / float (ndays_noleap(ivar_cur+1)    &
-                                                                  - ndays_noleap(ivar_cur))
-          call cond_real (ic, var_cur, d_tbl%cond(ic)%lim_const, idtbl)
+          ivar_cur = time%mo 
+          ivar_tbl = int(d_tbl%cond(ic)%lim_const)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
           
         !rotation year
         case ("year_rot")
@@ -314,7 +320,7 @@
           
           ivar_cur = pcom(ob_num)%rot_yr 
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
 
         !growth year of perennials
         case ("year_gro")
@@ -323,19 +329,25 @@
           
           ivar_cur = pcom(ob_num)%plcur(1)%curyr_mat
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
                        
         !calendar year
         case ("year_cal")
           ivar_cur = time%yrc
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
           
         !sequential year of simulation
         case ("year_seq")
           ivar_cur = time%yrs
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
+                  
+        !sequential year of simulation
+        case ("year_start")
+          ivar_cur = time%yrc_start
+          ivar_tbl = int(d_tbl%cond(ic)%lim_const)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
                   
         !current years of maturity for perennial plants
         case ("cur_yrs_mat")
@@ -344,7 +356,7 @@
           
           ivar_cur = pcom(ob_num)%plcur(1)%curyr_mat
           ivar_tbl = int(d_tbl%cond(ic)%lim_const)
-          call cond_integer (ic, ivar_cur, ivar_tbl, idtbl)
+          call cond_integer (ic, ivar_cur, ivar_tbl)
                        
         !above ground biomass
         case ("biomass")
@@ -444,12 +456,12 @@
           
           do ialt = 1, d_tbl%alts
             if (d_tbl%alt(ic,ialt) == "=") then
-              if (hru(ob_num)%tiledrain /= Int(d_tbl%cond(ic)%lim_const)) then
+              if (hru(ob_num)%tiledrain == 0) then
                 d_tbl%act_hit(ialt) = "n"
               end if
             end if
             if (d_tbl%alt(ic,ialt) == "/") then
-              if (hru(ob_num)%tiledrain == Int(d_tbl%cond(ic)%lim_const)) then
+              if (hru(ob_num)%tiledrain == 1) then
                 d_tbl%act_hit(ialt) = "n"
               end if
             end if
@@ -509,12 +521,12 @@
           !! update cumulative probability if new day
           if (time%day /= d_tbl%day_prev .and. d_tbl%days_prob > 0) then
             !! reset if first day of window
-            if (time%day == d_tbl%cond(ic)%ob_num) then
+            if (time%yrc == d_tbl%cond(ic)%ob_num .and. time%day == 1) then
               d_tbl%days_prob = d_tbl%cond(ic)%lim_const
               d_tbl%prob_cum = 0.
             end if
             d_tbl%day_prev = time%day
-            !! check if winow is over - days_prob are the number of days left in window
+            !! check if window is over - days_prob are the number of days left in window
             if (d_tbl%days_prob >= 1) then
               !! cumulative prob of uniform distribution on current day of the window
               d_tbl%prob_cum = 1. / float(d_tbl%days_prob)
@@ -631,12 +643,23 @@
           
           do ialt = 1, d_tbl%alts
             if (d_tbl%alt(ic,ialt) == "=") then
-              if (hru(ob_num)%dbsc%land_use_mgt /= d_tbl%cond(ic)%lim_var) then
+              if (hru(ob_num)%land_use_mgt_c /= d_tbl%cond(ic)%lim_var) then
                 d_tbl%act_hit(ialt) = "n"
               end if
             end if
           end do
                    
+        !calibration group in landuse.lum - ie: cropland, urban, forest, etc
+        case ("cal_group")
+          ob_num = d_tbl%cond(ic)%ob_num
+          if (ob_num == 0) ob_num = ob_cur
+          do ialt = 1, d_tbl%alts
+            if (d_tbl%alt(ic,ialt) == "=") then
+              if (hru(ob_num)%cal_group /= d_tbl%cond(ic)%lim_var) then
+                d_tbl%act_hit(ialt) = "n"
+              end if
+            end if
+          end do
         !tillage system - name of tillage decision table in lum.dtl
         case ("tillage")
           ob_num = d_tbl%cond(ic)%ob_num
@@ -657,7 +680,7 @@
           end do
                
         !plants - if plant is in the cummunity
-        case ("plant")
+        case ("plant_com")
           ob_num = d_tbl%cond(ic)%ob_num
           if (ob_num == 0) ob_num = ob_cur
           
@@ -686,7 +709,7 @@
           end do
           
         !channel management
-        case ("ch_use")
+        case ("ch_order")
           ob_num = d_tbl%cond(ic)%ob_num
           if (ob_num == 0) ob_num = ob_cur
           
@@ -718,6 +741,8 @@
               targ = targ_val + 10000. * d_tbl%cond(ic)%lim_const
             case ("-")
               targ = targ_val - 10000. * d_tbl%cond(ic)%lim_const   !convert ha-m to m3
+            case ("/")
+              targ = targ_val / d_tbl%cond(ic)%lim_const
             end select
           case ("evol")   !emergency storage volume
             targ_val = res_ob(ires)%evol
@@ -729,24 +754,31 @@
               targ = targ_val + 10000. * d_tbl%cond(ic)%lim_const
             case ("-")
               targ = targ_val - 10000. * d_tbl%cond(ic)%lim_const   !convert ha-m to m3
+            case ("/")
+              targ = targ_val / d_tbl%cond(ic)%lim_const
             end select
           end select
 
           !check alternatives
           call cond_real (ic, res(ires)%flo, targ, idtbl)
                
-        !impounded water depth -paddy average water depth of water
+        !reservoir inflow: JK added 28/02/2023
+        case ("res_inflo")
+          !determine target variable
+          ob_num = d_tbl%cond(ic)%ob_num
+          if (ob_num == 0) ob_num = ob_cur
+          iob = sp_ob1%res + ob_num - 1
+          flo_m3 = ob(iob)%hin%flo / 86400. 
+          call cond_real (ic, flo_m3, d_tbl%cond(ic)%lim_const, idtbl)         
+            
+        !impounded water depth -paddy average water depth
         case ("wet_depth")
           !determine target variable
           ires = d_tbl%cond(ic)%ob_num
           if (ires == 0) ires = ob_cur
           
-          !set limit constant if comparing to weir height
-          if (d_tbl%cond(ic)%lim_var == "hwater") then
-            targ = d_tbl%cond(ic)%lim_const/1000. !m
-          else
-            targ = wet_ob(ires)%weir_hgt
-          end if
+          !convert depth to m
+          targ = d_tbl%cond(ic)%lim_const/1000.
           
           !check alternatives
           call cond_real (ic, wet_ob(ires)%depth, targ, idtbl)
@@ -757,8 +789,8 @@
           ires = d_tbl%cond(ic)%ob_num
           if (ires == 0) ires = ob_cur
           
-          !set limit constant if comparing to weir height
-          targ = d_tbl%cond(ic)%lim_const/1000. !m
+          !convert depth to m
+          targ = d_tbl%cond(ic)%lim_const/1000.
           
           !check alternatives
           call cond_real (ic, wet_ob(ires)%weir_hgt, targ, idtbl)

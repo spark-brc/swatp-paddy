@@ -12,10 +12,10 @@
       implicit none
       
       integer, intent (in) :: ihru             !            |
-      integer :: ipest                         !            |
-      integer :: j
-      integer :: iob
-      real :: const
+      integer :: ipest = 0                     !            |
+      integer :: j = 0
+      integer :: iob = 0
+      real :: const = 0.
                          
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!    this subroutine outputs HRU variables on daily, monthly and annual time steps
@@ -96,6 +96,6 @@
       end do    !pesticide loop
       return
       
-100   format (4i6,2i8,2x,2a,14e12.4)      
+100   format (4i6,2i8,2x,2a,16e12.4)      
 
       end subroutine hru_pesticide_output

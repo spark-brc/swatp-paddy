@@ -2,21 +2,20 @@
     
       implicit none
       
-      character(len=16), dimension (:), allocatable :: plts_bsn     !none      |plant names simulated in current run
-      character(len=16), dimension (:), allocatable :: plants_bsn   !none      |plant names simulated in current run - final
-     
+      character(len=40), dimension (:), allocatable :: plts_bsn     !none      |plant names simulated in current run
+      character(len=25), dimension(:), allocatable :: pl_class      !none      |plant class - row crop, tree, grass, etc
       type plant_db
-        character(len=40) :: plantnm     !none              |crop name
-        character(len=18) :: typ         !none              |plant category
+        character(len=40) :: plantnm = ""  !none              |crop name
+        character(len=18) :: typ = ""    !none              |plant category
                                          !                  |warm_annual
                                          !                  |cold_annual
                                          !                  |warm_annual_tuber
                                          !                  |cold_annual_tuber
                                          !                  |perennial
-        character(len=18) :: trig        !none              |phenology trigger
+        character(len=18) :: trig = ""   !none              |phenology trigger
                                          !                  |moisture_gro
                                          !                  |temp_gro
-        real :: nfix_co                  !none              |n fixation coefficient (0.5 legume; 0 non-legume)
+        real :: nfix_co = 0.             !none              |n fixation coefficient (0.5 legume; 0 non-legume)
         integer :: days_mat = 110        !days              |days to maturity - if zero use hu for entire growing season
         real :: bio_e = 15.0             !(kg/ha/(MJ/m**2)  |biomass-energy ratio
         real :: hvsti = 0.76             !(kg/ha)/(kg/ha)   |harvest index: crop yield/aboveground biomass
@@ -40,15 +39,15 @@
         real :: pltnfr1 = 0.006          !kg N/kg biomass   |nitrogen uptake parm #1
         real :: pltnfr2 = 0.002          !kg N/kg biomass   |nitrogen uptake parm #2 
         real :: pltnfr3 = 0.0015         !kg N/kg/biomass   |nitrogen uptake parm #3
-        real :: pltpfr1 = 0.0007         !kg P/kg/biomass   |phoshorus uprake parm #1
-        real :: pltpfr2 = 0.0004         !kg P/kg/biomass   |phoshorus uprake parm #2
-        real :: pltpfr3 = 0.0003         !kg P/kg/biomass   |phoshorus uprake parm #3
+        real :: pltpfr1 = 0.0007         !kg P/kg/biomass   |phoshorus uptake parm #1
+        real :: pltpfr2 = 0.0004         !kg P/kg/biomass   |phoshorus uptake parm #2
+        real :: pltpfr3 = 0.0003         !kg P/kg/biomass   |phoshorus uptake parm #3
         real :: wsyf = 0.01              !(kg/ha)/(kg/ha)   |value of harvest index bet 0 and HVSTI
         real :: usle_c = 0.001           !none              |minimum value of the USLE C factor for water erosion
         real :: gsi = 0.002              !m/s               |maximum stomatal conductance
         real :: vpdfr = 4.               !kPa               |vapor pressure deficit at which GMAXFR is valid
         real :: gmaxfr = 0.75            !none              |fraction of max stomatal conductance that is 
-                                         !                    achieved at the vapor pressue deficit defined by VPDFR
+                                         !                    achieved at the vapor pressure deficit defined by VPDFR
         real :: wavp = 8.                !none              |rate of decline in radiation use efficiency
         real :: co2hi = 660.             !uL CO2/L air      |CO2 concentration higher than the ambient corresponding
                                          !                    to the 2nd point on radiation use efficiency curve             
@@ -57,12 +56,12 @@
         real :: rsdco_pl = 0.05          !none              |plant residue decomposition coeff
         real :: alai_min = 0.75          !m**2/m**2         |min LAI during winter dormant period
         real :: laixco_tree = 0.3        !none              |coefficient to estimate max lai during tree growth
-        integer :: mat_yrs = 10          !years             |year to maturity  
+        integer :: mat_yrs = 10          !years             |years to maturity  
         real :: bmx_peren = 1000.        !metric tons/ha    |max biomass for forest
         real :: ext_coef = 0.65          !                  |light extinction coefficient
         real :: leaf_tov_min = 12.       !months            |perennial leaf turnover rate with minimum stress (complete turnover in 12 mon)
         real :: leaf_tov_max = 3.        !months            |perennial leaf turnover rate with maximum stress (complete turnover in 3 mon)
-        real :: bm_dieoff = 1.           !frac              |above ground biomass that dies off at dormancy
+        real :: bm_dieoff = 0.           !frac              |above ground biomass that dies off at dormancy
         !real :: leaf_frac_mx             !frac              |max fraction of above ground biomass that is leaf (assume constant over life of perennial)
         real :: rsr1 = 0.                !frac              |initial root to shoot ratio at the beg of growing season
         real :: rsr2 = 0.                !frac              |root to shoot ratio at the end of the growing season
@@ -96,7 +95,7 @@
         real :: pup1 = 0.        !none      |1st shape parameter for plant P uptake equation
         real :: pup2 = 0.        !none      |2nd shape parameter for plant P uptake equation
         real :: gmaxfr = 0.      !none      |fraction of max stomatal conductance that is 
-                                 !            achieved at the vapor pressue deficit defined by VPDFR
+                                 !            achieved at the vapor pressure deficit defined by VPDFR
         real :: vpdfr = 0.       !kPa       |vapor pressure deficit at which GMAXFR is valid
         real :: cvm = 0.         !frac      |fraction of the maximum leaf area index corresponding
                                  !            to the second point of the optimal leaf area dev curve
@@ -134,7 +133,7 @@
         real :: bioms = 0.                  !kg/ha          |land cover/crop biomass
         real :: phuacc = 0.                 !frac           |frac of plant heat unit acc.
         real :: fr_yrmat = 0.05             !years          |fraction of current year of growth to years to maturity 
-        real :: pop                         !plants/m^2     |plant population 
+        real :: pop = 0.                    !plants/m^2     |plant population 
       end type plant_transplant_db
       type (plant_transplant_db), dimension(:), allocatable :: transpl
     

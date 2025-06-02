@@ -1,6 +1,8 @@
       module water_body_module
     
-      !! water body (reservoir, wetland, and channel) output not uncluded in hyd_output object
+      implicit none
+    
+      !! water body (reservoir, wetland, and channel) output not included in hyd_output object
 
       type water_body
         real :: area_ha = 0.            !ha         |water body surface area

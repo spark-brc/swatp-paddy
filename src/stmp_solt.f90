@@ -33,24 +33,24 @@
       
       implicit none
 
-      integer :: j               !none          |HRU number
-      integer :: k               !none          |counter
-      real :: f                  !none          |variable to hold intermediate calculation result
-      real :: dp                 !mm            |maximum damping depth
-      real :: ww                 !none          |variable to hold intermediate calculation
-      real :: b                  !none          |variable to hold intermediate calculation
-      real :: wc                 !none          |scaling factor for soil water impact on daily damping depth
-      real :: dd                 !mm            |damping depth for day
-      real :: xx                 !none          |variable to hold intermediate calculation
-      real :: st0                !MJ/m^2        |radiation hitting soil surface on day
-      real :: tlag               !none          |lag coefficient for soil temperature
-      real :: df                 !none          |depth factor
-      real :: zd                 !none          |ratio of depth at center of layer to damping depth 
-      real :: bcv                !none          |lagging factor for cover
-      real :: tbare              !deg C         |temperature of bare soil surface
-      real :: tcov               !deg C         |temperature of soil surface corrected for cover
-      real :: tmp_srf            !deg C         |temperature of soil surface
-      real :: cover              !kg/ha         |soil cover
+      integer :: j = 0           !none          |HRU number
+      integer :: k = 0           !none          |counter
+      real :: f = 0.             !none          |variable to hold intermediate calculation result
+      real :: dp = 0.            !mm            |maximum damping depth
+      real :: ww = 0.            !none          |variable to hold intermediate calculation
+      real :: b = 0.             !none          |variable to hold intermediate calculation
+      real :: wc = 0.            !none          |scaling factor for soil water impact on daily damping depth
+      real :: dd = 0.            !mm            |damping depth for day
+      real :: xx = 0.            !none          |variable to hold intermediate calculation
+      real :: st0 = 0.           !MJ/m^2        |radiation hitting soil surface on day
+      real :: tlag = 0.          !none          |lag coefficient for soil temperature
+      real :: df = 0.            !none          |depth factor
+      real :: zd = 0.            !none          |ratio of depth at center of layer to damping depth 
+      real :: bcv = 0.           !none          |lagging factor for cover
+      real :: tbare = 0.         !deg C         |temperature of bare soil surface
+      real :: tcov = 0.          !deg C         |temperature of soil surface corrected for cover
+      real :: tmp_srf = 0.       !deg C         |temperature of soil surface
+      real :: cover = 0.         !kg/ha         |soil cover
 
       j = ihru
 
@@ -84,7 +84,7 @@
 
 !! calculate lagging factor for soil cover impact on soil surface temp
 !! SWAT manual equation 2.3.11
-      cover = pl_mass(j)%ab_gr_com%m + rsd1(j)%tot_com%m
+      cover = pl_mass(j)%ab_gr_com%m + soil1(j)%rsd(1)%m
       bcv = cover / (cover + Exp(7.563 - 1.297e-4 * cover))
       if (hru(j)%sno_mm /= 0.) then
         if (hru(j)%sno_mm <= 120.) then
@@ -109,7 +109,7 @@
       tcov = bcv * soil(j)%phys(2)%tmp + (1. - bcv) * tbare
 
 !!    taking average of bare soil and covered soil as in APEX
-!!    previously using minumum causing soil temp to decrease
+!!    previously using minimum causing soil temp to decrease
 !!    in summer due to high biomass
 
       tmp_srf = 0.5 * (tbare + tcov)  ! following Jimmy"s code
@@ -132,10 +132,10 @@
         isep = iseptic(j)
         if (sep(isep)%opt /= 0 .and. time%yrc >= sep(isep)%yr .and. k >=       &
                                                           i_sep(j)) then
-	   if (soil(j)%phys(k)%tmp < 10.) then
-	       soil(j)%phys(k)%tmp = 10. - (10. - soil(j)%phys(k)%tmp) * 0.1
-	   end if     
-	  endif
+       if (soil(j)%phys(k)%tmp < 10.) then
+           soil(j)%phys(k)%tmp = 10. - (10. - soil(j)%phys(k)%tmp) * 0.1
+       end if     
+      endif
 
       end do
 

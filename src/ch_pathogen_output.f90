@@ -12,10 +12,10 @@
       implicit none
       
       integer, intent (in) :: ihru              !            |
-      integer :: ipaths                         !            |
-      integer :: j
-      integer :: iob
-      real :: const
+      integer :: ipaths = 0                     !            |
+      integer :: j = 0
+      integer :: iob = 0
+      real :: const = 0.
                          
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!    this subroutine outputs HRU variables on daily, monthly and annual time steps
@@ -98,9 +98,9 @@
       return
       
 100   format (4i6,2i8,2x,a,28f12.3)
-101   format (4i6,2i8,2x,a,20f12.3)
-102   format (4i6,2i8,2x,a,20f12.3)
-103   format (2i6,i8,4x,a,5x,f12.3)
-104   format (4i6,2i8,2x,a,27f18.3)
+!*** tu Wunused-label: 101   format (4i6,2i8,2x,a,20f12.3)
+!*** tu Wunused-label: 102   format (4i6,2i8,2x,a,20f12.3)
+!*** tu Wunused-label: 103   format (2i6,i8,4x,a,5x,f12.3)
+!*** tu Wunused-label: 104   format (4i6,2i8,2x,a,27f18.3)
        
       end subroutine ch_pathogen_output

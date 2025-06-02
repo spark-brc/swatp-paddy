@@ -7,19 +7,21 @@
       
        implicit none
        
-       character (len=80) :: titldum    !             |title of file
-       character (len=80) :: header     !             |header
-       character (len=1) :: done
-       integer :: eof                   !             |end of file
+       character (len=80) :: titldum = "" !             |title of file
+       character (len=80) :: header = ""  !             |header
+       character (len=1) :: done = ""
+       integer :: eof = 0               !             |end of file
        logical :: i_exist               !             |check to determine if file exists
-       integer:: i
-       integer:: iyr_start, iyrc
-       integer :: itot, iyr, iyr_co2
-       real :: co2_end 
+       integer:: iyr_start = 0
+       integer:: iyrc = 0
+       integer :: itot = 0
+       integer :: iyr = 0
+       integer :: iyr_co2 = 0
+       real :: co2_end = 0.
               
       type co2
-        integer :: iyr
-        real :: co2
+        integer :: iyr = 0
+        real :: co2 = 0.
       end type co2
     
       type co2_annual
@@ -29,8 +31,8 @@
       type (co2_annual) :: co2_inc
       
       !! output annual CO2 
-      !open (2222,file="co2.out")
-      !write (2222,*) "         YR    CO2(ppm)"
+      open (2222,file="co2.out")
+      write (2222,*) "         YR    CO2(ppm)"
          
        eof = 0
       
@@ -60,7 +62,7 @@
         enddo
         endif
         
-        allocate (co2y(time%nbyr))
+        allocate (co2y(time%nbyr), source = 0.)
         
         done = "n"
         !! no co2 file - default to basin parm
@@ -102,10 +104,10 @@
             
         !! write to co2.out
         iyrc = time%yrc_start
-        !do iyr = 1, time%nbyr
-        !  write (2222,*) iyrc, co2y(iyr)
-        !  iyrc = iyrc + 1
-        !end do
+        do iyr = 1, time%nbyr
+          write (2222,*) iyrc, co2y(iyr)
+          iyrc = iyrc + 1
+        end do
             
        return
       end subroutine co2_read

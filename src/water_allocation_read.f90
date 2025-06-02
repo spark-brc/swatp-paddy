@@ -11,21 +11,22 @@
       
       implicit none 
       
-      character (len=80) :: titldum   !           |title of file
-      character (len=80) :: header    !           |header of file
-      integer :: eof                  !           |end of file
-      integer :: imax                 !none       |determine max number for array (imax) and total number in file
+      character (len=80) :: titldum = ""!           |title of file
+      character (len=80) :: header = "" !           |header of file
+      integer :: eof = 0              !           |end of file
+      integer :: imax = 0             !none       |determine max number for array (imax) and total number in file
       logical :: i_exist              !none       |check to determine if file exists
-      integer :: i                    !none       |counter
-      integer :: k                    !none       |counter
-      integer :: isrc                 !none       |counter
-      integer :: iwro                 !none       |number of water allocation objects
-      integer :: num_objs
-      integer :: idmd
-      integer :: idb
-      integer :: idb_irr
-      integer :: ihru
-      integer :: isrc_wallo
+      integer :: i = 0                !none       |counter
+      integer :: k = 0                !none       |counter
+      integer :: isrc = 0             !none       |counter
+      integer :: iwro = 0             !none       |number of water allocation objects
+      integer :: num_objs = 0
+      integer :: idmd = 0
+      integer :: idb = 0
+      integer :: idb_irr = 0
+      integer :: ihru = 0
+      integer :: isrc_wallo = 0
+      integer :: div_found = 0
       
       eof = 0
       imax = 0
@@ -73,12 +74,26 @@
             wallo(iwro)%src(i)%num = i
             if (eof < 0) exit
             backspace (107)
-            read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ, wallo(iwro)%src(i)%ob_num,    &
+            read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ
+            backspace (107)
+            !! if source is diversion into the basin, read the recall name
+            if (wallo(iwro)%src(i)%ob_typ == "div_in") then
+              read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ, wallo(iwro)%src(i)%div_rec
+              !! xwalk with recall.rec
+              do idb = 1, db_mx%recall_max
+                if (wallo(iwro)%src(i)%div_rec == recall(idb)%name) then
+                  wallo(iwro)%src(i)%rec_num = idb
+                  exit
+                end if
+              end do
+            else
+              read (107,*,iostat=eof) k, wallo(iwro)%src(i)%ob_typ, wallo(iwro)%src(i)%ob_num,    &
                                                                   wallo(iwro)%src(i)%limit_mon
-            !! call wallo_control from channel
-            if (wallo(iwro)%src(i)%ob_typ == "cha") then
-              sd_ch(wallo(iwro)%src(i)%ob_num)%wallo = iwro
-              wallo(iwro)%cha = wallo(iwro)%src(i)%ob_num
+              !! call wallo_control from channel
+              if (wallo(iwro)%src(i)%ob_typ == "cha") then
+                sd_ch(wallo(iwro)%src(i)%ob_num)%wallo = iwro
+                wallo(iwro)%cha = wallo(iwro)%src(i)%ob_num
+              end if
             end if
           end do
           
@@ -101,7 +116,7 @@
             allocate (walloy_out(iwro)%dmd(i)%src(num_objs))
             allocate (walloa_out(iwro)%dmd(i)%src(num_objs))
             
-            !! for hru irrigtion, need to xwalk with irrigation demand decision table
+            !! for hru irrigation, need to xwalk with irrigation demand decision table
             if (wallo(iwro)%dmd(i)%ob_typ == "hru") then
               !! xwalk with lum decision table
               do idb = 1, db_mx%dtbl_lum
@@ -177,6 +192,28 @@
             end do
             
           end do
+          
+          !if canal diversions are used as source water, read in the number of days that diversion water can be
+          !available for irrigation (rtb)
+          div_found = 0
+          do isrc = 1, wallo(iwro)%src_obs
+            if(wallo(iwro)%src(isrc)%ob_typ == "div") then
+              div_found = 1
+            endif
+          enddo
+          if(div_found == 1) then
+            !prepare array
+            allocate (div_volume_daily(sp_ob%recall), source = 0.)
+            allocate (div_volume_total(sp_ob%recall), source = 0.)
+            allocate (div_volume_used(sp_ob%recall), source = 0.)
+            div_volume_daily = 0.
+            div_volume_total = 0.
+            div_volume_used = 0.
+            !read the days parameter
+            read(107,*)
+            read(107,*) div_delay
+            div_delay = Exp(-1./(div_delay + 1.e-6))
+          endif
           
         end do
 

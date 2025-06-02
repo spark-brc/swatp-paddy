@@ -32,38 +32,36 @@
 
       use basin_module
       use organic_mineral_mass_module
-      use hru_module, only : hru, latno3, percn, surqno3, tileno3, surfq, ihru, qtile, gwtrann
-      use gwflow_module, only : gw_transfer_flag,gw_transport_flag,hru_ntran
+      use hru_module, only : hru, latno3, percn, surqno3, tileno3, surfq, ihru, qtile, gwsoiln
+      use gwflow_module, only : gw_soil_flag,gw_solute_flag,hru_soil
       use soil_module
       
       implicit none 
 
-      integer :: j         !none          |HRU number
-      integer :: jj        !none          |counter 
-      integer :: jlo       !none          |counter for taking tile no3 from lower layers
-      real :: sro          !mm H2O        |surface runoff 
-      real :: ssfnlyr      !kg N/ha       |nitrate transported in lateral flow from layer
-      real :: percnlyr     !kg N/ha       |nitrate leached to next lower layer with
+      integer :: j = 0     !none          |HRU number
+      integer :: jj = 0    !none          |counter 
+      integer :: jlo = 0   !none          |counter for taking tile no3 from lower layers
+      real :: sro = 0.     !mm H2O        |surface runoff 
+      real :: ssfnlyr = 0. !kg N/ha       |nitrate transported in lateral flow from layer
+      real :: percnlyr = 0.  !kg N/ha       |nitrate leached to next lower layer with
                            !              |percolation
-      real :: vv           !mm H2O        |water mixing with nutrient in layer
-      real :: vno3         !              |
-      real :: co           !kg N/mm       |concentration of nitrate in solution
-      real :: cosurf       !kg N/mm       |concentration of nitrate in surface runoff 
-      real :: nloss        !frac          |nloss based on half life
-      real :: ww           !varies        |variable to hold intermediate calculation
-      real :: ul_sum       !mm            |sum of porosity in tile layer to lowest layer
-      real :: no3_sum      !kg/ha         |sum of no3 in tile layer to lowest layer
-      real :: tileno3_left !kg/ha         |remaining no3 if not available from layers below tile
-      real :: st_sum
+      real :: vv = 0.      !mm H2O        |water mixing with nutrient in layer
+      real :: vno3 = 0.    !              |
+      real :: co = 0.      !kg N/mm       |concentration of nitrate in solution
+      real :: ww = 0.      !varies        |variable to hold intermediate calculation
+      real :: ul_sum = 0.  !mm            |sum of porosity in tile layer to lowest layer
+      real :: no3_sum = 0. !kg/ha         |sum of no3 in tile layer to lowest layer
+      real :: tileno3_left = 0.!kg/ha         |remaining no3 if not available from layers below tile
+      real :: st_sum = 0.
 
       j = ihru
 
       
       !rtb gwflow: add nitrate mass transferred to soil profile from the aquifer
-      if(gw_transfer_flag.eq.1 .and. gw_transport_flag.eq.1) then
+      if (gw_soil_flag == 1 .and. gw_solute_flag == 1) then
         do jj = 1, soil(j)%nly
-          soil1(j)%mn(jj)%no3 = soil1(j)%mn(jj)%no3 + hru_ntran(j,jj) !kg/ha
-          gwtrann(j) = gwtrann(j) + hru_ntran(j,jj) !HRU total
+          soil1(j)%mn(jj)%no3 = soil1(j)%mn(jj)%no3 + hru_soil(j,jj,1) !kg/ha
+          gwsoiln(j) = gwsoiln(j) + hru_soil(j,jj,1) !HRU total
         enddo
       endif
       
@@ -73,7 +71,7 @@
 
         !! add nitrate leached from layer above
         soil1(j)%mn(jj)%no3 = soil1(j)%mn(jj)%no3 + percnlyr
-	    if (soil1(j)%mn(jj)%no3 < 1.e-6) soil1(j)%mn(jj)%no3 = 0.0
+        if (soil1(j)%mn(jj)%no3 < 1.e-6) soil1(j)%mn(jj)%no3 = 0.0
 
         !! determine concentration of nitrate in mobile water
         if (jj == 1) then
@@ -84,12 +82,15 @@
         vv = soil(j)%ly(jj)%prk + sro + soil(j)%ly(jj)%flat + 1.e-10
         if (hru(j)%lumv%ldrain == jj) vv = vv + qtile
         ww = -vv / ((1. - soil(j)%anion_excl) * soil(j)%phys(jj)%ul)
+        if (ww < -80.0) then   ! This check was added to prevent gfortran aborting on the Exp(ww) function below.
+          ww = -80
+        endif
         vno3 = soil1(j)%mn(jj)%no3 * (1. - Exp(ww))
         co = Max(vno3 / vv, 0.)     !kg/ha/mm (if * 100 = ppm)
 
         !! calculate nitrate in surface runoff
         if (jj == 1) then
-          surqno3(j) = surfq(j) * bsn_prm%nperco * co
+          surqno3(j) = surfq(j) * hru(j)%nut%nperco * co
           surqno3(j) = Min(surqno3(j), soil1(j)%mn(jj)%no3)
           soil1(j)%mn(jj)%no3 = max(0.0001,soil1(j)%mn(jj)%no3 - surqno3(j))
         endif
@@ -110,7 +111,7 @@
           ww = -vv / ((1. - soil(j)%anion_excl) * ul_sum)
           vno3 = no3_sum * (1. - Exp(ww))
           co = Max(vno3 / vv, 0.)     !kg/ha/mm (if * 100 = ppm)
-          tileno3(j) = co * bsn_prm%nperco_lchtile  * qtile
+          tileno3(j) = co * hru(j)%nut%nperco_lchtile  * qtile
           !! subtract tile no3 from soil layers
           tileno3_left = tileno3(j)
           do jlo = jj, soil(j)%nly
@@ -139,6 +140,7 @@
         percnlyr = co * soil(j)%ly(jj)%prk
         percnlyr = Min(percnlyr, soil1(j)%mn(jj)%no3)
         soil1(j)%mn(jj)%no3 = max(0.0001,soil1(j)%mn(jj)%no3 - percnlyr)
+        ! print*, "in nut_nlch", jj, soil1(j)%mn(jj)%no3, percnlyr
         
         !! last layer leaches from soil profile
         if (jj == soil(j)%nly) then

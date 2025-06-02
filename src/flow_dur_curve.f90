@@ -5,17 +5,17 @@
       
       implicit none  
 
-      real :: sum                         !             |
-      integer :: iyr                      !none         |number of years
-      integer :: next                     !             |
-      integer :: npts                     !             |
-      integer :: ipts                     !             |
-      integer :: iprv                     !             |
-      integer :: mle                      !             |
-      integer :: nprob                    !             |
-      integer :: iday                     !             |
-      integer :: mfe                      !             |
-      integer :: iyr_ch                   !             | 
+      real :: sum = 0.                    !             |
+      integer :: iyr = 0                  !none         |number of years
+      integer :: next = 0                 !             |
+      integer :: npts = 0                 !             |
+      integer :: ipts = 0                 !             |
+      integer :: iprv = 0                 !             |
+      integer :: mle = 0                  !             |
+      integer :: nprob = 0                !             |
+      integer :: iday = 0                 !             |
+      integer :: mfe = 0                  !             |
+      integer :: iyr_ch = 0               !             | 
 
         !set linked list for daily flow duration curves
         ob(icmd)%fdc_ll(time%day)%val = ob(icmd)%hd(1)%flo
@@ -158,4 +158,4 @@
         !master duration curve from annual curves (median)
    
       return
-      end  subroutine flow_dur_curve
+      end subroutine flow_dur_curve

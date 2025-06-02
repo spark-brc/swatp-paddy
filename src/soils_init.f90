@@ -1,6 +1,6 @@
       subroutine soils_init
       
-      use hru_module, only : hru, wfsh, ihru, isep, isep_ly, iseptic, i_sep
+      use hru_module, only : hru, wfsh, ihru, isep, iseptic, i_sep
       use soil_module
       use plant_module
       use maximum_data_module
@@ -14,14 +14,14 @@
       
       implicit none  
       
-      integer :: msoils           !none          !ending of loop
-      integer :: isol             !none          |counter
-      integer :: mlyr             !none          |max number of soil layers
-      integer :: j                !none          |counter
-      integer :: nly              !              |end of loop
-      integer :: ly               !none          |counter
-      real :: dep_new1            !mm            |depth of top of septic layer
-      real :: dep_new2            !mm            |depth of bottom of septic layer
+      integer :: msoils = 0       !none          !ending of loop
+      integer :: isol = 0         !none          |counter
+      integer :: mlyr = 0         !none          |max number of soil layers
+      integer :: j = 0            !none          |counter
+      integer :: nly = 0          !              |end of loop
+      integer :: ly = 0           !none          |counter
+      real :: dep_new1 = 0.       !mm            |depth of top of septic layer
+      real :: dep_new2 = 0.       !mm            |depth of bottom of septic layer
       
       !!Section 1
       !!this section sets, allocates, and initializes the original soil database
@@ -106,16 +106,16 @@
       do ihru = 1, sp_ob%hru
         !! allocate soil layers
         isol = hru(ihru)%dbs%soil
-        wfsh(ihru) = 10. * Exp(6.5309 - 7.32561* sol(isol)%phys(1)%por +    &
-      3.809479 * sol(isol)%phys(1)%por**2+0.001583 *                        &
-      sol(isol)%phys(1)%clay **2 + 0.000344 * sol(isol)%phys(1)%sand*       &
-      sol(isol)%phys(1)%clay - 0.049837 * sol(isol)%phys(1)%por *           &
-      sol(isol)%phys(1)%sand + 0.001608*sol(isol)%phys(1)%por ** 2 *        &
-      sol(isol)%phys(1)%sand ** 2+0.001602*sol(isol)%phys(1)%por ** 2 *     &
-      sol(isol)%phys(1)%clay**2-0.0000136*sol(isol)%phys(1)%sand ** 2       &
-      * sol(isol)%phys(1)%clay-0.003479*sol(isol)%phys(1)%clay ** 2 *       &
-      sol(isol)%phys(1)%por - 0.000799 * sol(isol)%phys(1)%sand ** 2 *      & 
-      sol(isol)%phys(1)%por)
+        wfsh(ihru) = 10. * Exp(6.5309 - 7.32561* sol(isol)%phys(1)%por +            &
+            3.809479 * sol(isol)%phys(1)%por**2+0.001583 *                          &
+            sol(isol)%phys(1)%clay **2 + 0.000344 * sol(isol)%phys(1)%sand*         &
+            sol(isol)%phys(1)%clay - 0.049837 * sol(isol)%phys(1)%por *             &
+            sol(isol)%phys(1)%sand + 0.001608*sol(isol)%phys(1)%por ** 2 *          &
+            sol(isol)%phys(1)%sand ** 2+0.001602*sol(isol)%phys(1)%por ** 2 *       &
+            sol(isol)%phys(1)%clay**2-0.0000136*sol(isol)%phys(1)%sand ** 2         &
+            * sol(isol)%phys(1)%clay-0.003479*sol(isol)%phys(1)%clay ** 2 *         &
+            sol(isol)%phys(1)%por - 0.000799 * sol(isol)%phys(1)%sand ** 2 *        & 
+            sol(isol)%phys(1)%por)
         soil(ihru) = sol(isol)%s
         nly = soil(ihru)%nly
         allocate (soil(ihru)%ly(nly))
@@ -163,14 +163,16 @@
    
         !! allocate soil1 arrays - carbon/nutrients
         nly = soil(ihru)%nly
-        allocate (cs_soil(ihru)%ly(nly))
-        allocate (soil1(ihru)%sw(nly))
-        allocate (soil1(ihru)%salt(nly))
-        allocate (soil1(ihru)%cbn(nly))
+        !allocate (cs_soil(ihru)%ly(nly))
+        allocate (soil1(ihru)%sw(nly), source = 0.)
+        allocate (soil1(ihru)%cbn(nly), source = 0.)
         allocate (soil1(ihru)%sed(nly))
         allocate (soil1(ihru)%mn(nly))
         allocate (soil1(ihru)%mp(nly))
         allocate (soil1(ihru)%tot(nly))
+        allocate (soil1(ihru)%seq(nly))
+        allocate (soil1(ihru)%org_flx_lr(nly))
+        allocate (soil1(ihru)%org_flx_cum_lr(nly))
         allocate (soil1(ihru)%hact(nly))
         allocate (soil1(ihru)%hsta(nly))
         allocate (soil1(ihru)%rsd(nly))
@@ -183,12 +185,13 @@
         allocate (soil1(ihru)%man(nly))
         allocate (soil1(ihru)%water(nly))
 
-        allocate (soil1_init(ihru)%sw(nly))
-        allocate (soil1_init(ihru)%cbn(nly))
+        allocate (soil1_init(ihru)%sw(nly), source = 0.)
+        allocate (soil1_init(ihru)%cbn(nly), source = 0.)
         allocate (soil1_init(ihru)%sed(nly))
         allocate (soil1_init(ihru)%mn(nly))
         allocate (soil1_init(ihru)%mp(nly))
         allocate (soil1_init(ihru)%tot(nly))
+        allocate (soil1_init(ihru)%seq(nly))
         allocate (soil1_init(ihru)%hact(nly))
         allocate (soil1_init(ihru)%hsta(nly))
         allocate (soil1_init(ihru)%rsd(nly))
@@ -201,15 +204,6 @@
         allocate (soil1_init(ihru)%man(nly))
         allocate (soil1_init(ihru)%water(nly))
         
-        !! initialize carbon and nutrient contents for each hru
-        call soil_nutcarb_init(isol)
-        
-      end do
-      
-      do ihru = 1, sp_ob%hru
-        if (pco%snutc == "d" .or. pco%snutc == "m" .or. pco%snutc == "y" .or. pco%snutc == "a") then
-          call soil_nutcarb_write
-        end if
       end do
 
       return

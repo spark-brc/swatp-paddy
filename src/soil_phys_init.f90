@@ -31,22 +31,21 @@
       
       implicit none
 
-      integer :: j            !none          |counter
-      integer :: nly          !none          |number of soil layers
-      real :: xx              !none          |variable to hold value
-      real :: sumpor          !mm            |porosity of profile
-      real :: pormm           !mm            |porosity in mm depth
-      real :: nota            !              |
-      real :: a               !m^2           |cross-sectional area of channel
-      real :: b               !m             |bottom width of channel
-      real :: c               !none          |inverse of channel side slope
-      real :: d               !m             |depth of flow
+      integer :: j = 0        !none          |counter
+      integer :: nly = 0      !none          |number of soil layers
+      real :: sumpor = 0.     !mm            |porosity of profile
+      real :: pormm = 0.      !mm            |porosity in mm depth
+      real :: nota = 0.       !              |
+      real :: a = 0.          !m^2           |cross-sectional area of channel
+      real :: b = 0.          !m             |bottom width of channel
+      real :: c = 0.          !none          |inverse of channel side slope
+      real :: d = 0.          !m             |depth of flow
       integer :: isol         !              |   
-      real :: drpor           !              |
-      real :: sa              !ha            |surface area of impounded water body
-      real :: cl              !              |
-      real :: si              !m/n           |slope of main channel
-      real :: depth_prev      !              |
+      real :: drpor = 0.      !              |
+      real :: sa = 0.         !ha            |surface area of impounded water body
+      real :: cl = 0.         !              |
+      real :: si = 0.         !m/n           |slope of main channel
+      real :: depth_prev = 0. !              |
       
 
       if (sol(isol)%s%alb < 0.1) sol(isol)%s%alb  = 0.1
@@ -63,13 +62,13 @@
         if (sol(isol)%phys(j)%k <= 0.0) then 
           if (sol(isol)%s%hydgrp == "A") then
             sol(isol)%phys(j)%k = a
-	    else
+        else
           if (sol(isol)%s%hydgrp == "B") then
             sol(isol)%phys(j)%k = b
-	    else
+        else
           if (sol(isol)%s%hydgrp == "C") then
             sol(isol)%phys(j)%k = c
-	    else
+        else
           if (sol(isol)%s%hydgrp == "D") then
             sol(isol)%phys(j)%k = d          !Claire 12/2/09
           else 
@@ -132,15 +131,15 @@
        sol(isol)%s%det_lag = 1. - sol(isol)%s%det_san -                 &                
           sol(isol)%s%det_sil - sol(isol)%s%det_cla - sol(isol)%s%det_sag  !! Large Aggregate fraction
 
-!!	Error check. May happen for soils with more sand
+!!  Error check. May happen for soils with more sand
 !!    Soil not typical of mid-western USA
-!!    The fraction wont add upto 1.0
-	if (sol(isol)%s%det_lag < 0.) then
-	  sol(isol)%s%det_san = sol(isol)%s%det_san/(1 - sol(isol)%s%det_lag) 
-	  sol(isol)%s%det_sil = sol(isol)%s%det_sil/(1 - sol(isol)%s%det_lag) 
-	  sol(isol)%s%det_cla = sol(isol)%s%det_cla/(1 - sol(isol)%s%det_lag) 
-	  sol(isol)%s%det_sag = sol(isol)%s%det_sag/(1 - sol(isol)%s%det_lag) 
-	  sol(isol)%s%det_lag = 0.
+!!    The fraction won't add upto 1.0
+    if (sol(isol)%s%det_lag < 0.) then
+      sol(isol)%s%det_san = sol(isol)%s%det_san/(1 - sol(isol)%s%det_lag) 
+      sol(isol)%s%det_sil = sol(isol)%s%det_sil/(1 - sol(isol)%s%det_lag) 
+      sol(isol)%s%det_cla = sol(isol)%s%det_cla/(1 - sol(isol)%s%det_lag) 
+      sol(isol)%s%det_sag = sol(isol)%s%det_sag/(1 - sol(isol)%s%det_lag) 
+      sol(isol)%s%det_lag = 0.
       end if
 
 !!    initialize water/drainage coefs for each soil layer
@@ -182,10 +181,8 @@
       sol(isol)%s%avbd = 2.65 * (1. - sol(isol)%s%avpor)
 
 !!    calculate infiltration parameters for subdaily time step
-      if (time%step > 0) then
-        sol(isol)%phys(1)%sand = 100. - sol(isol)%phys(1)%clay -     &
-                                    sol(isol)%phys(1)%silt
-        
+      if (time%step > 1) then
+        sol(isol)%phys(1)%sand = 100. - sol(isol)%phys(1)%clay - sol(isol)%phys(1)%silt
       end if
 
       return

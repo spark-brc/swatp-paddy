@@ -6,7 +6,7 @@
       use calibration_data_module
       use plant_data_module
       use landuse_data_module
-      use hru_module, only : hru, ihru, ipl
+      use hru_module, only : hru, ihru
       use plant_module
       use output_landscape_module
       use organic_mineral_mass_module
@@ -14,20 +14,18 @@
       implicit none
       
       integer, dimension(:), allocatable :: iarea
-      integer, dimension(:), allocatable :: idp
-      integer :: ireg
-      integer :: ielem
-      real :: area_ha
-      integer :: i
-      integer :: ilum
-      integer :: nlum
-      real :: const
-      integer :: ilum_db
-      real :: constnb
-      integer :: icu
-      integer :: j
-      real :: constwb
-      real :: constpw
+      integer :: ireg = 0
+      integer :: ielem = 0
+      real :: area_ha = 0.
+      integer :: i = 0
+      integer :: ilum = 0
+      integer :: nlum = 0
+      real :: const = 0.
+      integer :: ilum_db = 0
+      real :: constnb = 0.
+      integer :: icu = 0
+      real :: constwb = 0.
+      real :: constpw = 0.
               
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!!    PRINT CODES: "avann" = average annual (always print)
@@ -35,7 +33,7 @@
 !!                  "mon"   = monthly
 !!                  "day"   = daily
 
-      allocate (iarea(db_mx%landuse))
+      allocate (iarea(db_mx%landuse), source = 0)
       ! determine the number of land uses within each region
       if (time%day == 1) then   !reset on first day of year (lum can change on day 1)
       iarea = 0
@@ -51,10 +49,18 @@
         region(ireg)%nlum = nlum
 
         ! allocate output variables
-        allocate (rwb_d(ireg)%lum(nlum)); allocate (rwb_m(ireg)%lum(nlum)); allocate (rwb_y(ireg)%lum(nlum))
-        allocate (rnb_d(ireg)%lum(nlum)); allocate (rnb_m(ireg)%lum(nlum)); allocate (rnb_y(ireg)%lum(nlum))
-        allocate (rls_d(ireg)%lum(nlum)); allocate (rls_m(ireg)%lum(nlum)); allocate (rls_y(ireg)%lum(nlum))
-        allocate (rpw_d(ireg)%lum(nlum)); allocate (rpw_m(ireg)%lum(nlum)); allocate (rpw_y(ireg)%lum(nlum))
+        allocate (rwb_d(ireg)%lum(nlum))
+        allocate (rwb_m(ireg)%lum(nlum))
+        allocate (rwb_y(ireg)%lum(nlum))
+        allocate (rnb_d(ireg)%lum(nlum))
+        allocate (rnb_m(ireg)%lum(nlum))
+        allocate (rnb_y(ireg)%lum(nlum))
+        allocate (rls_d(ireg)%lum(nlum))
+        allocate (rls_m(ireg)%lum(nlum))
+        allocate (rls_y(ireg)%lum(nlum))
+        allocate (rpw_d(ireg)%lum(nlum))
+        allocate (rpw_m(ireg)%lum(nlum))
+        allocate (rpw_y(ireg)%lum(nlum))
         
         !set the lum number from the lum database -sequential for the region
         nlum = 1
@@ -200,7 +206,7 @@
           rwb_y(ireg)%lum(ilum)%sw_300 = rwb_y(ireg)%lum(ilum)%sw_300 / 12.
           constwb = 1. / (10. * region(ireg)%lum_ha(ilum))              !10.*mm*ha=m3
           constnb = 1. / (region(ireg)%lum_ha(ilum))                    !kg/ha*ha=kg
-          constpw = region(ireg)%area_ha / region(ireg)%lum_ha(ilum)    !weighted ave fro non-dimensional and weather
+          constpw = region(ireg)%area_ha / region(ireg)%lum_ha(ilum)    !weighted ave for non-dimensional and weather
           ilum_db = region(ireg)%lum_num(ilum)                          !lum database number
           region(ireg)%lum_ha_tot(ilum_db) = region(ireg)%lum_ha_tot(ilum_db) + region(ireg)%lum_ha(ilum)
           rwb_a(ireg)%lum(ilum_db) = rwb_a(ireg)%lum(ilum_db) + rwb_y(ireg)%lum(ilum) / constwb
@@ -330,6 +336,6 @@
 100   format (4i6,2a16,22f12.3)
 101   format (4i6,2a16,24f12.3)
 102   format (4i6,2a16,24f12.3)
-103   format (4i6,i8,4x,a,5x,f12.3)
+!*** tu Wunused-label: 103   format (4i6,i8,4x,a,5x,f12.3)
        
       end subroutine lsreg_output

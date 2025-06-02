@@ -1,4 +1,4 @@
-      subroutine wallo_transfer (iwallo, idmd, isrc, dmd_m3)
+      subroutine wallo_transfer (iwallo, idmd)
       
       use water_allocation_module
       use hydrograph_module
@@ -11,10 +11,8 @@
 
       integer, intent (in):: iwallo         !water allocation object number
       integer, intent (in) :: idmd          !water demand object number
-      integer, intent (in) :: isrc          !source object number
-      real, intent (in) :: dmd_m3           !m3     |demand
-      integer :: j                  !none       |object number of specific type (cha, res, aqu, etc)
-      integer :: iob                !none       |object number (ob)
+      integer :: j = 0              !none       |object number of specific type (cha, res, aqu, etc)
+      integer :: iob = 0            !none       |object number (ob)
 
       !! check if water is available from each source - set withdrawal and unmet
       select case (wallo(iwallo)%dmd(idmd)%rcv_ob)

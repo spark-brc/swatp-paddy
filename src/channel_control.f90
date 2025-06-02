@@ -50,43 +50,24 @@
       
       implicit none
 
-      integer :: ii       !units         |description
-      real :: qdbank      !m^3 H2O       |streamflow contribution from bank storage
-      real :: revapday    !m^3 H2O       |amount of water moving from bank storage
+      integer :: ii = 0   !units         |description
+      real :: qdbank = 0. !m^3 H2O       |streamflow contribution from bank storage
+      real :: revapday = 0. !m^3 H2O       |amount of water moving from bank storage
                           !              |into the soil profile or being taken
                           !              |up by plant roots in the bank storage zone
-      real :: sedcon      !g/m^3         |sediment concentration
-      real :: reactw      !mg pst        |amount of pesticide in reach that is lost
-                          !              |through reactions  
-      real :: volatpst    !mg pst        |amount of pesticide lost from reach by
-                          !              |volatilization
-      real :: setlpst     !mg pst        |amount of pesticide moving from water to
-                          !              |sediment due to settling
-      real :: resuspst    !mg pst        |amount of pesticide moving from sediment to
-                          !              |reach due to resuspension
-      real :: difus       !mg pst        |diffusion of pesticide from sediment to reach
-      real :: reactb      !mg pst        |amount of pesticide in sediment that is lost
-                          !              |through reactions
-                          !              |up by plant roots in the bank storage zone
-      real :: bury        !mg pst        |loss of pesticide from active sediment layer
-                          !              |by burial
-      real :: sedpest     !mg pst        |pesticide in river bed sediment 
-      real :: soxy             !mg O2/L       |saturation concetration of dissolved oxygen
-      real :: chlin            !mg chl-a/L    |chlorophyll-a concentration in inflow
-      real :: algin            !mg alg/L      |algal biomass concentration in inflow
-      real :: orgnin           !mg N/L        |organic N concentration in inflow
-      real :: ammoin           !mg N/L        |ammonium N concentration in inflow
-      real :: nitratin         !mg N/L        |nitrate concentration in inflow
-      real :: nitritin         !mg N/L        |nitrite concentration in inflow
-      real :: orgpin           !mg P/L        |organic P concentration in inflow 
-      real :: dispin           !mg P/L        |soluble P concentration in inflow
-      real :: cbodin           !mg/L          |carbonaceous biological oxygen demand
-      real :: disoxin          !mg O2/L       |dissolved oxygen concentration in inflow
-      real :: cinn             !mg N/L        |effective available nitrogen concentration
-      real :: rttlc_d
-      real :: rtdelt
-      real :: rtevp_d
-      integer :: inum1
+      real :: chlin = 0.       !mg chl-a/L    |chlorophyll-a concentration in inflow
+      real :: algin = 0.       !mg alg/L      |algal biomass concentration in inflow
+      real :: orgnin = 0.      !mg N/L        |organic N concentration in inflow
+      real :: ammoin = 0.      !mg N/L        |ammonium N concentration in inflow
+      real :: nitratin = 0.    !mg N/L        |nitrate concentration in inflow
+      real :: nitritin = 0.    !mg N/L        |nitrite concentration in inflow
+      real :: orgpin = 0.      !mg P/L        |organic P concentration in inflow 
+      real :: dispin = 0.      !mg P/L        |soluble P concentration in inflow
+      real :: cbodin = 0.      !mg/L          |carbonaceous biological oxygen demand
+      real :: disoxin = 0.     !mg O2/L       |dissolved oxygen concentration in inflow
+      real :: cinn = 0.        !mg N/L        |effective available nitrogen concentration
+      real :: rttlc_d = 0.
+      real :: rtevp_d = 0.
                          
       ch_d(jrch)%flo_out = 0.
       ch_d(jrch)%evap = 0.
@@ -112,29 +93,29 @@
 
       ch(jrch)%vel_chan = 0.
       ch(jrch)%dep_chan = 0.
-	  sedrch = 0.
-	  rch_san = 0.
-	  rch_sil = 0.
-	  rch_cla = 0.
-	  rch_sag = 0.
-	  rch_lag = 0.
-	  rch_gra = 0.
+      sedrch = 0.
+      rch_san = 0.
+      rch_sil = 0.
+      rch_cla = 0.
+      rch_sag = 0.
+      rch_lag = 0.
+      rch_gra = 0.
       wtrin = 0.
       chlin = 0.
-         algin = 0.
-         orgnin = 0.
-         ammoin = 0.
-         nitritin = 0.
-         nitratin = 0.
-         orgpin = 0.
-         dispin = 0.
-         cbodin = 0.
-         disoxin = 0.
+      algin = 0.
+      orgnin = 0.
+      ammoin = 0.
+      nitritin = 0.
+      nitratin = 0.
+      orgpin = 0.
+      dispin = 0.
+      cbodin = 0.
+      disoxin = 0.
          cinn = 0.
 !! route water through reach
-        rtwtr_d=0.
-        rttlc_d=0.
-        rtevp_d =0.
+      rtwtr_d=0.
+      rttlc_d=0.
+      rtevp_d =0.
 
 !! route water through reach
       if (time%step == 0) then
@@ -148,6 +129,7 @@
         ben_area = ch_hyd(jhyd)%l *ch_hyd(jhyd)%w 
         
 !        if (cs_db%num_pests > 0) then
+
 !          call ch_rtpest 
 !        end if
         
@@ -174,10 +156,8 @@
         rch_sag = 0.
         rch_lag = 0.
         rch_gra = 0.
-        call ch_rthsed
-
-        end do
-      
+        
+        end do    
       endif
 
 !! average daily water depth for sandi doty 09/26/07
@@ -206,16 +186,16 @@
 
 !!    Channel Deposition (Only new deposits during the current time step)
       if (ch(jrch)%depch >= ch(jrch)%depprch) then
-	    ch_d(jrch)%ch_dep = ch(jrch)%depch - ch(jrch)%depprch
-	  else
-	    ch_d(jrch)%ch_dep = 0.
-	  end if
+        ch_d(jrch)%ch_dep = ch(jrch)%depch - ch(jrch)%depprch
+      else
+        ch_d(jrch)%ch_dep = 0.
+      end if
 !!    Floodplain Deposition (Only new deposits during the current time step)
       if (ch(jrch)%depfp >= ch(jrch)%depprfp) then
-	    ch_d(jrch)%fp_dep = ch(jrch)%depfp - ch(jrch)%depprfp
-	  else
-	    ch_d(jrch)%fp_dep = 0.
-	  end if
+        ch_d(jrch)%fp_dep = ch(jrch)%depfp - ch(jrch)%depprfp
+      else
+        ch_d(jrch)%fp_dep = 0.
+      end if
 !!    Total suspended sediments (only silt and clay)
       if (ch_sed(jsed)%eqn == 0) then
         ch_d(jrch)%tot_ssed = sedrch
