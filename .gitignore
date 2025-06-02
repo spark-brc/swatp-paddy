@@ -35,7 +35,7 @@
 swatplus/
 
 # output files
-example_data/TxtInOut_Osu_1hru/*.txt
-example_data/TxtInOut_Osu_1hru/*.csv
-example_data/TxtInOut_Osu_1hru/*.swf
-example_data/TxtInOut_Osu_1hru/*.out
+example_data/Osu_1hru/*.txt
+example_data/Osu_1hru/*.csv
+example_data/Osu_1hru/*.swf
+example_data/Osu_1hru/*.out
